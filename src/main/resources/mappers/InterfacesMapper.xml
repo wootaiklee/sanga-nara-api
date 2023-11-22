@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="InterfacesMapper">
+
+	<!-- 휴대폰 본인인증 데이터 존재여부 및 추가발송 가능여부 확인 -->
+	<select id="getMobileVerificationCnt" parameterType="String" resultType="String">
+		<![CDATA[
+			SELECT
+				CASE
+					WHEN DATE_ADD( NOW(), INTERVAL 140 SECOND ) < VRF_EXPR_DTTM
+						THEN 'YET'
+					ELSE
+						'CAN'
+				END AS CAN_SEND_TYP
+			FROM
+				TB_MOBILE_VERIFICATION
+			WHERE
+				MOB_NO = #{mobNo}
+		]]>
+	</select>
+
+	<!-- 휴대폰 본인인증 인증코드 등록 -->
+	<insert id="registerMobileVerification" parameterType="MemberVO">
+		<![CDATA[
+			INSERT INTO TB_MOBILE_VERIFICATION
+				(
+					MOB_NO,
+					MOB_VRF_NO,
+					VRF_EXPR_DTTM
+				)
+			VALUES
+				(
+					#{mobNo},
+					#{mobVrfNo},
+					DATE_ADD( NOW(), INTERVAL 200 SECOND )
+				)
+		]]>
+	</insert>
+
+	<!-- 휴대폰 본인인증 인증코드 갱신 -->
+	<update id="updateMobileVerification" parameterType="MemberVO">
+		<![CDATA[
+			UPDATE
+				TB_MOBILE_VERIFICATION
+			SET
+				MOB_VRF_NO = #{mobVrfNo},
+				VRF_FAIL_CNT = 0,
+				VRF_EXPR_DTTM = DATE_ADD( NOW(), INTERVAL 200 SECOND ),
+				VRF_CNFRM_TOKEN = NULL
+			WHERE
+				MOB_NO = #{mobNo}
+		]]>
+	</update>
+	
+	<!-- 휴대폰 본인인증 번호 검증 -->
+	<select id="mobNoVerification" parameterType="MemberVO" resultType="String">
+		<![CDATA[
+			SELECT
+				CASE
+					WHEN ( VRF_FAIL_CNT > 5 ) OR ( VRF_EXPR_DTTM < NOW() )
+						THEN 'E'					-- EXPIRE
+					ELSE
+						'S'							-- SUCCESS
+				END AS VRF_TYP
+			FROM
+				TB_MOBILE_VERIFICATION
+			WHERE
+				MOB_NO = #{mobNo}
+				AND MOB_VRF_NO = #{mobVrfNo}
+		]]>
+	</select>
+	
+	<!-- 휴대폰 본인인증 실패횟수 추가 -->
+	<update id="updateMobNoVrfFailCnt" parameterType="String">
+		<![CDATA[
+			UPDATE
+				TB_MOBILE_VERIFICATION
+			SET
+				VRF_FAIL_CNT = VRF_FAIL_CNT + 1
+			WHERE
+				MOB_NO = #{mobNo}
+				AND VRF_CNFRM_TOKEN = NULL
+				AND VRF_FAIL_CNT < 9					-- INT(1) SIZE. MAX VALUE IS 9
+		]]>
+	</update>
+	
+	<!-- 휴대폰 본인인증 검증확인토큰 등록 -->
+	<update id="updateMobVrfNoCnfrmToken" parameterType="MemberVO">
+		<![CDATA[
+			UPDATE
+				TB_MOBILE_VERIFICATION
+			SET
+				VRF_CNFRM_TOKEN = #{vrfCnfrmToken}
+			WHERE
+				MOB_NO = #{mobNo}
+		]]>
+	</update>
+
+	<!-- 알림톡 메시지 발송이력 등록 -->
+	<insert id="registerKakaoMessageSendHist" parameterType="KakaoMessageVO">
+		<![CDATA[
+			INSERT INTO TB_KAKAO_MESSAGE_SEND_HIST
+				(
+					RCPNT_MOB_NO,
+					MSG_TMPLT_CD,
+					MSG_MAPPNG_VAL,
+					REQ_ID,
+					REQ_RSLT
+				)
+			VALUES
+				(
+					#{rcpntMobNo},
+					#{msgTmpltCd},
+					#{msgMappngVal},
+					#{reqId},
+					#{reqRslt}
+				)
+		]]>
+	</insert>
+
+	<!-- 이메일/휴대폰번호 검증 -->
+	<select id="emailMobnoValidation" parameterType="MemberVO" resultType="String">
+		<![CDATA[
+			SELECT
+				COALESCE( SNS_GB_CD, 'E' ) AS SNS_GB_CD
+			FROM
+				TB_MEMBER
+			WHERE
+				EMAIL = #{email}
+				AND MOB_NO = #{mobNo}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+</mapper>

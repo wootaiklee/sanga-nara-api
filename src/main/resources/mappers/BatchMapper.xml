@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BatchMapper">
+
+	<!-- 오래된( 30일 이상 지난 ) 배치 수행이력 데이터 삭제 -->
+	<delete id="clearBatchExecuteOldHistData">
+		<![CDATA[
+			DELETE FROM
+				TB_BATCH_EXECUTE_HIST
+			WHERE
+				DATE_FORMAT( EXEC_DTTM, '%Y%m%d' ) < DATE_FORMAT( DATE_SUB( NOW(), INTERVAL 30 DAY ), '%Y%m%d' )
+		]]>
+	</delete>
+
+	<!-- 카카오 메시지 발송결과 갱신대상 기간정보 조회 -->
+	<select id="getKakaoMessageSendRsltDatesInfo" resultType="KakaoMessageVO">
+		<![CDATA[
+			SELECT
+				COALESCE( DATE_FORMAT( MIN( REQ_DTTM ), '%Y-%m-%d %H:%i' ), '' ) AS SRCH_ST_DTTM,
+				COALESCE( DATE_FORMAT( MAX( REQ_DTTM ), '%Y-%m-%d %H:%i' ), '' ) AS SRCH_ED_DTTM
+			FROM
+				TB_KAKAO_MESSAGE_SEND_HIST
+			WHERE
+				SEND_RSLT IS NULL
+		]]>
+	</select>
+	
+	<!-- 카카오 메시지 발송결과 갱신 -->
+	<update id="updateKakaoSendMessageResult" parameterType="KakaoMessageVO">
+		<![CDATA[
+			UPDATE
+				TB_KAKAO_MESSAGE_SEND_HIST
+			SET
+				SEND_RSLT = #{sendRslt},
+				RESEND_STAT_CD = #{resendStatCd}
+			WHERE
+				REQ_ID = #{reqId}
+		]]>
+	</update>
+
+	<!-- 기본지역코드 정보 조회 -->
+	<select id="getStandardRegionVO" parameterType="String" resultType="StandardRegionVO">
+		<![CDATA[
+			SELECT
+				REGION_CD,
+				SIDO_CD,
+				SGG_CD,
+				UMD_CD,
+				RI_CD,
+				LOCAL_ADDR_NM,
+				LOCAL_LOW_NM,
+				LOCAL_ORDER
+			FROM
+				TB_STANDARD_REGION
+			WHERE
+				REGION_CD = #{regionCd}
+		]]>
+	</select>
+	
+	<!-- 기본지역코드 신규등록 -->
+	<insert id="insertNewStandardRegisionData" parameterType="StandardRegionVO">
+		<![CDATA[
+			INSERT INTO TB_STANDARD_REGION
+				(
+					REGION_CD,
+					SIDO_CD,
+					SGG_CD,
+					UMD_CD,
+					RI_CD,
+					LOCAL_ADDR_NM,
+					LOCAL_LOW_NM,
+					LOCAL_ORDER,
+					UPD_DATE
+				)
+			VALUES
+				(
+					#{regionCd},
+					#{sidoCd},
+					#{sggCd},
+					#{umdCd},
+					#{riCd},
+					#{localAddrNm},
+					#{localLowNm},
+					#{localOrder},
+					NOW()
+				)
+		]]>
+	</insert>
+	
+	<!-- 기본지역코드 갱신 -->
+	<update id="updateStandardRegisionData" parameterType="StandardRegionVO">
+		<![CDATA[
+			UPDATE
+				TB_STANDARD_REGION
+			SET
+				SIDO_CD = #{sidoCd},
+				SGG_CD = #{sggCd},
+				UMD_CD = #{umdCd},
+				RI_CD = #{riCd},
+				LOCAL_ADDR_NM = #{localAddrNm},
+				LOCAL_LOW_NM = #{localLowNm},
+				LOCAL_ORDER = #{localOrder},
+				UPD_DATE = NOW()
+			WHERE
+				REGION_CD = #{regionCd}
+		]]>
+	</update>
+	
+	<!-- 배치 수행이력 적재 -->
+	<insert id="registerBatchExecuteHist" parameterType="BatchVO">
+		<![CDATA[
+			INSERT INTO TB_BATCH_EXECUTE_HIST
+				(
+					BATCH_NM,
+					SUCCS_YN,
+					EXEC_RSLT
+				)
+			VALUES
+				(
+					#{batchNm},
+					#{succsYn},
+					#{execRslt}
+				)
+		]]>
+	</insert>
+	
+	<!-- 당일 공지알림 발송대상 목록조회 -->
+	<select id="getTodayPublicNotificationList" resultType="NotificationVO">
+		<![CDATA[
+			SELECT
+				PUBLIC_NOTI_SEQNO,
+				NOTI_TYP_GB_CD,
+				NOTI_DSCR,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_MEMBER
+					WHERE
+						DEL_YN = 'N'
+						AND MEM_TYP_CD != 'A'
+						AND ACNT_APRV_STAT_CD = 'Y'
+				) AS RCPNT_CNT
+			FROM
+				TB_PUBLIC_NOTIFICATION
+			WHERE
+				DEL_YN = 'N'
+				AND SEND_TREAT_DTTM IS NULL
+				AND DATE_FORMAT( SEND_DT, '%Y%m%d' ) = DATE_FORMAT( NOW(), '%Y%m%d' )
+		]]>
+	</select>
+	
+	<!-- 공지알림 일괄 적재 -->
+	<insert id="registerPublicNotification" parameterType="NotificationVO">
+		<![CDATA[
+			INSERT INTO TB_NOTIFICATION
+				(
+					MEM_SEQNO,
+					NOTI_GB_CD,
+					NOTI_TYP_GB_CD,
+					NOTI_TTL,
+					NOTI_DSCR
+				)
+			SELECT
+				MEM_SEQNO,
+				'NOTI' AS NOTI_GB_CD,
+				#{notiTypGbCd} AS NOTI_TYP_GB_CD,
+				#{notiTtl} AS NOTI_TTL,
+				#{notiDscr} AS NOTI_DSCR
+			FROM
+				TB_MEMBER
+			WHERE
+				DEL_YN = 'N'
+				AND MEM_TYP_CD != 'A'
+				AND ACNT_APRV_STAT_CD = 'Y'
+		]]>
+	</insert>
+	
+	<!-- 공지알림 상태 갱신 -->
+	<update id="updatePublicNotificationState" parameterType="NotificationVO">
+		<![CDATA[
+			UPDATE
+				TB_PUBLIC_NOTIFICATION
+			SET
+				SEND_TREAT_DTTM = NOW(),
+				RCPNT_CNT = #{rcpntCnt}
+			WHERE
+				PUBLIC_NOTI_SEQNO = #{publicNotiSeqno}
+		]]>
+	</update>
+	
+	<!-- N일 후 분양일정 목록조회 -->
+	<select id="getAfterNDaySalesSchdlList" parameterType="Integer" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				P.SUGGSTN_SALES_SEQNO,
+				P.BLD_NM,
+				I.SCHDL_NM,
+				DATE_FORMAT( I.SCHDL_ST_DATE, '%Y.%m.%d' ) AS SCHDL_ST_DATE,
+				DATE_FORMAT( I.SCHDL_ED_DATE, '%Y.%m.%d' ) AS SCHDL_ED_DATE
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_PROPERTY P
+					INNER JOIN TB_ADMIN_SUGGESTION_SALES_SCHEDULE_INFO I
+						ON P.SUGGSTN_SALES_SEQNO = I.SUGGSTN_SALES_SEQNO
+			WHERE
+				P.DEL_YN = 'N'
+				AND DATE_FORMAT( I.SCHDL_ST_DATE, '%Y%m%d' ) = DATE_FORMAT( DATE_ADD( NOW(), INTERVAL #{addDays} DAY ), '%Y%m%d' )
+		]]>
+	</select>
+	
+	<!-- 분양일정 발송대상 회원 시퀀스 목록조회 -->
+	<select id="getSalesSchdlNotiTargetMemberList" parameterType="Long" resultType="Long">
+		<![CDATA[
+			SELECT
+				MEM_SEQNO
+			FROM
+				TB_SUGGESTION_SALES_NOTIFICATION
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+		]]>
+	</select>
+</mapper>

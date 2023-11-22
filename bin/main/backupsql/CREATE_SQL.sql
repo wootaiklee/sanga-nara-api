@@ -1,0 +1,958 @@
+/* ######################################################### */
+/* 	[ TB_ASSET ] 자산 */
+/* ######################################################### */
+-- DROP TABLE TB_ASSET;
+SELECT * FROM TB_ASSET;
+CREATE TABLE TB_ASSET (
+	ASSET_SEQNO						BIGINT(12)			PRIMARY KEY		COMMENT '자산시퀀스'					AUTO_INCREMENT,
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	ESTATE_TYP_GB_CD				VARCHAR(30)			NOT NULL		COMMENT '매물유형구분코드',
+	ESTATE_TYP_CD					VARCHAR(30)			NOT NULL		COMMENT '매물구분코드',
+	TRAN_TYP_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '거래유형구분코드',
+	ADDR							VARCHAR(300)		NOT NULL		COMMENT '지번주소',
+	ROAD_ADDR						VARCHAR(300)		NOT NULL		COMMENT '도로명주소',
+	DTL_ADDR						VARCHAR(100)		NULL			COMMENT '상세주소',
+	TMP_ADDR_YN						CHAR(1)				NOT NULL		COMMENT '임시주소여부'					DEFAULT 'N',
+	LAT								DECIMAL(10,7)		NOT NULL		COMMENT '위도'						DEFAULT 0.0000000,
+	LNG								DECIMAL(10,7)		NOT NULL		COMMENT '경도'						DEFAULT 0.0000000,
+	SPLY_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '공급면적(평)'					DEFAULT 0.00,
+	PRV_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '전용면적(평)'					DEFAULT 0.00,
+	LND_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '대지면적(평)'					DEFAULT 0.00,
+	TOT_FLR_AREA					DECIMAL(10,2)		NOT NULL		COMMENT '연면적(평)'					DEFAULT 0.00,
+	INSP_GB_CD						VARCHAR(30)			NOT NULL		COMMENT '명의구분코드',
+	BIZMAN_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '사업자구분코드',
+	UNREGIST_YN						CHAR(1)				NULL			COMMENT '미등기여부',
+	DEAL_AMT						BIGINT(12)			NOT NULL		COMMENT '거래금액'						DEFAULT 0,
+	CONT_DATE						DATE				NULL			COMMENT '계약일자',
+	REGIST_DATE						DATE				NULL			COMMENT '등기일자',
+	ACQSTN_TAX_RATIO				DECIMAL(4,2)		NOT NULL		COMMENT '취득세율(%)'					DEFAULT 0.00,
+	ETC_COST						BIGINT(12)			NOT NULL		COMMENT '기타비용(원)'					DEFAULT 0,
+	TAXOFC_COST						INT(9)				NOT NULL		COMMENT '세무비용(원)'					DEFAULT 0,
+	EST_FEE_AMT						INT(9)				NOT NULL		COMMENT '부동산수수료(원)'				DEFAULT 0,
+	LOAN_AMT						BIGINT(12)			NOT NULL		COMMENT '기타비용(원)'					DEFAULT 0,
+	LOAN_INTR_RATIO					DECIMAL(4,2)		NOT NULL		COMMENT '대출금리(%)'					DEFAULT 0.00,
+	LOAN_MON_TERM					INT(3)				NOT NULL		COMMENT '대출기간(개월수)'				DEFAULT 0,
+	LOAN_DATE						DATE				NULL			COMMENT '대출일자',
+	LOAN_MTHD_GB_CD					VARCHAR(30)			NULL			COMMENT '대출방식구분코드',
+	EMPTY_TYP_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '공실유형구분코드',
+	LESEE_NM						VARCHAR(50)			NULL			COMMENT '임차인명',
+	LESEE_TEL_NO					VARCHAR(50)			NULL			COMMENT '임차인연락처',
+	RENT_AMT_PAY_MTHD_GB_CD			VARCHAR(30)			NULL			COMMENT '임대료납부방법구분코드',
+	DPST_AMT						BIGINT(12)			NOT NULL		COMMENT '보증금액(원)'					DEFAULT 0,
+	MONT_RENT_AMT					INT(7)				NOT NULL		COMMENT '월임대료(원)',
+	MONTHLY_PAY_DAY_GB_CD			VARCHAR(30)			NULL			COMMENT '월세입금일자구분코드',
+	RENT_CONT_ST_DATE				DATE				NULL			COMMENT '임대계약시작일자',
+	RENT_CONT_ED_DATE				DATE				NULL			COMMENT '임대계약종료일자',
+	REAL_INVEST_AMT					BIGINT(12)			NOT NULL		COMMENT '실투자금액(원)'				DEFAULT 0,
+	LOAN_INTR_AMT					INT(9)				NOT NULL		COMMENT '대출이자금액(원)'				DEFAULT 0,
+	ACQSTN_TAX_AMT					INT(9)				NOT NULL		COMMENT '취득세금액(원)'				DEFAULT 0,
+	TOT_COST						BIGINT(12)			NOT NULL		COMMENT '총비용(원)'					DEFAULT	0,
+	RTN_RATIO						DECIMAL(8,2)		NOT NULL		COMMENT '수익률(%)'					DEFAULT 0.00,
+	MON_PROFIT_AMT					INT(7)				NOT NULL		COMMENT '월순수익금액(원)'				DEFAULT 0,
+	PY_UNIT_AMT						INT(9)				NOT NULL		COMMENT '평단가금액(원)'				DEFAULT 0,
+	MK_PROFIT_AMT					BIGINT(12)			NOT NULL		COMMENT '시세차익금액(원)'				DEFAULT 0,
+	TRNSF_TAX_AMT					INT(9)				NOT NULL		COMMENT '양도세금액(원)'				DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '대출금액(원)'					DEFAULT 'N'
+) COMMENT '자산';
+
+
+/* ######################################################### */
+/* 	[ TB_ASSET_ATTACH_DOC ] 자산 */
+/* ######################################################### */
+-- DROP TABLE TB_ASSET_ATTACH_DOC;
+SELECT * FROM TB_ASSET_ATTACH_DOC;
+CREATE TABLE TB_ASSET_ATTACH_DOC (
+	ASSET_SEQNO						BIGINT(12)			NOT NULL		COMMENT '자산시퀀스'					DEFAULT 0,
+	ASSET_ATT_DOC_GB_CD				VARCHAR(30)			NOT NULL		COMMENT '자산첨부서류구분코드',
+	UPLOAD_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '업로드파일명',
+	SAVE_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '저장파일명',
+	FILE_URL						VARCHAR(300)		NOT NULL		COMMENT '파일URL',
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '대출금액(원)'					DEFAULT 'N'
+) COMMENT '자산';
+
+
+/* ######################################################### */
+/* 	[ TB_ADMIN_SUGGESTION_SALES_PROPERTY ] 관리자추천분양매물 */
+/* ######################################################### */
+-- DROP TABLE TB_ADMIN_SUGGESTION_SALES_PROPERTY;
+SELECT * FROM TB_ADMIN_SUGGESTION_SALES_PROPERTY;
+CREATE TABLE TB_ADMIN_SUGGESTION_SALES_PROPERTY (
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			PRIMARY KEY		COMMENT '추천분양시퀀스'				AUTO_INCREMENT,
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '유저에이전트',
+	SUGGSTN_SALES_REGION_GB_CD		VARCHAR(30)			NOT NULL		COMMENT '추천분양지역구분코드',
+	ADDR							VARCHAR(300)		NOT NULL		COMMENT '주소',
+	ADDR_SHORT_NM					VARCHAR(100)		NOT NULL		COMMENT '단축주소(시구군읍면동)',
+	BLD_NM							VARCHAR(200)		NOT NULL		COMMENT '건물명칭',
+	LAT								DECIMAL(10,7)		NOT NULL		COMMENT '위도',
+	LNG								DECIMAL(10,7)		NOT NULL		COMMENT '경도',
+	SUGGSTN_SALES_TTL				VARCHAR(200)		NOT NULL		COMMENT '추천분양제목',
+	SALES_DTL_DSCR					VARCHAR(400)		NULL			COMMENT '분양세부내용',
+	MIN_FLR							INT(2)				NOT NULL		COMMENT '최저층'						DEFAULT 0,
+	MAX_FLR							INT(3)				NOT NULL		COMMENT '최고층'						DEFAULT 0,
+	TOT_BLD_CNT						INT(3)				NOT NULL		COMMENT '총층수'						DEFAULT 0,
+	PARKING_CAR_CNT					INT(5)				NOT NULL		COMMENT '총주차대수'						DEFAULT 0,
+	HUS_HOLD_CNT					INT(5)				NOT NULL		COMMENT '총세대수'						DEFAULT 0,
+	LND_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '대지면적(평)'					DEFAULT 0.00,
+	BLD_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '건축면적(평)'					DEFAULT 0.00,
+	TOT_FLR_AREA					DECIMAL(10,2)		NOT NULL		COMMENT '연면적(평)'					DEFAULT 0.00,
+	FLR_AREA_RATIO					DECIMAL(6,2)		NOT NULL		COMMENT '용적률(%)'					DEFAULT 0.00,
+	BLD_TO_LND_RATIO				DECIMAL(6,2)		NOT NULL		COMMENT '건폐율(%)'					DEFAULT 0.00,
+	CMPLTN_DATE						DATE				NULL			COMMENT '준공일자',
+	EXPCT_MOV_MONTH					CHAR(6)				NOT NULL		COMMENT '입주예정월',
+	DEV_COMP_NM						VARCHAR(200)		NULL			COMMENT '시행사명',
+	CONST_COMP_NM					VARCHAR(200)		NULL			COMMENT '시공사명',
+	MATTER_PORT_LINK_URL			VARCHAR(200)		NULL			COMMENT '메타포트링크URL',
+	REP_IMG_SAVE_FILE_NM			VARCHAR(200)		NULL			COMMENT '대표이미지저장파일명',
+	REP_IMG_URL						VARCHAR(300)		NULL			COMMENT '대표이미지URL',
+	PO_STAT_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '분양상태구분코드'				DEFAULT 'E',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '관리자추천분양매물';
+
+
+/* ######################################################### */
+/* 	[ TB_ADMIN_SUGGESTION_SALES_DONG_INFO ] 관리자추천분양동정보 */
+/* ######################################################### */
+-- DROP TABLE TB_ADMIN_SUGGESTION_SALES_DONG_INFO;
+SELECT * FROM TB_ADMIN_SUGGESTION_SALES_DONG_INFO;
+CREATE TABLE TB_ADMIN_SUGGESTION_SALES_DONG_INFO (
+	DONG_SEQNO						BIGINT(12)			PRIMARY KEY		COMMENT '동시퀀스'						AUTO_INCREMENT,
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	DONG_NM							VARCHAR(200)		NOT NULL		COMMENT '동명칭',
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '관리자추천분양동정보';
+
+
+/* ######################################################### */
+/* 	[ TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO ] 관리자추천분양동별용도정보 */
+/* ######################################################### */
+-- DROP TABLE TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO;
+SELECT * FROM TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO;
+CREATE TABLE TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO (
+	USAGE_BY_DONG_SEQNO				BIGINT(12)			PRIMARY KEY		COMMENT '동별용도시퀀스'				AUTO_INCREMENT,
+	DONG_SEQNO						BIGINT(12)			NOT NULL		COMMENT '동시퀀스'						DEFAULT 0,
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	FLR_USAGE_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '층별용도구분코드',
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '관리자추천분양동별용도정보';
+-- CREATE UNIQUE INDEX IDX_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO ON TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO ( DONG_SEQNO, SUGGSTN_SALES_SEQNO, FLR_USAGE_GB_CD );
+
+
+/* ######################################################### */
+/* 	[ TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO ] 관리자추천분양층별정보 */
+/* ######################################################### */
+-- DROP TABLE TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO;
+SELECT * FROM TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO;
+CREATE TABLE TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO (
+	SUGGSTN_SALES_FLR_SEQNO			BIGINT(12)			PRIMARY KEY		COMMENT '추천분양층시퀀스'				AUTO_INCREMENT,
+	USAGE_BY_DONG_SEQNO				BIGINT(12)			NOT NULL		COMMENT '동별용도시퀀스'				DEFAULT 0,
+	DONG_SEQNO						BIGINT(12)			NOT NULL		COMMENT '동시퀀스'						DEFAULT 0,
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	ST_FLR							INT(3)				NOT NULL		COMMENT '시작층'						DEFAULT 0,
+	ED_FLR							INT(3)				NOT NULL		COMMENT '종료층'						DEFAULT 0,
+	FLR_PLAN_SAVE_FILE_NM			VARCHAR(200)		NULL			COMMENT '층별도면저장파일명',
+	FLR_PLAN_FILE_URL				VARCHAR(300)		NULL			COMMENT '층별도면파일URL',
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '관리자추천분양층별정보';
+
+
+/* ######################################################### */
+/* 	[ TB_ADMIN_SUGGESTION_SALES_PREMIUM_INFO ] 관리자추천분양프리미엄정보 */
+/* ######################################################### */
+-- DROP TABLE TB_ADMIN_SUGGESTION_SALES_PREMIUM_INFO;
+SELECT * FROM TB_ADMIN_SUGGESTION_SALES_PREMIUM_INFO;
+CREATE TABLE TB_ADMIN_SUGGESTION_SALES_PREMIUM_INFO (
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	PRMM_TTL						VARCHAR(200)		NOT NULL		COMMENT '프리미엄타이틀',
+	PRMM_DSCR						VARCHAR(500)		NOT NULL		COMMENT '프리미엄내용',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW()
+) COMMENT '관리자추천분양프리미엄정보';
+
+
+/* ######################################################### */
+/* 	[ TB_ADMIN_SUGGESTION_SALES_SCHEDULE_INFO ] 관리자추천분양일정정보 */
+/* ######################################################### */
+-- DROP TABLE TB_ADMIN_SUGGESTION_SALES_SCHEDULE_INFO;
+SELECT * FROM TB_ADMIN_SUGGESTION_SALES_SCHEDULE_INFO;
+CREATE TABLE TB_ADMIN_SUGGESTION_SALES_SCHEDULE_INFO (
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	SCHDL_NM						VARCHAR(200)		NOT NULL		COMMENT '일정명',
+	SCHDL_ST_DATE					DATE				NULL			COMMENT '일정시작일자',
+	SCHDL_ED_DATE					DATE				NULL			COMMENT '일정종료일자'
+) COMMENT '관리자추천분양일정정보';
+
+
+/* ######################################################### */
+/* 	[ TB_AUTO_LOGIN_TOKEN ] 자동로그인토큰 */
+/* ######################################################### */
+-- DROP TABLE TB_AUTO_LOGIN_TOKEN;
+SELECT * FROM TB_AUTO_LOGIN_TOKEN;
+CREATE TABLE TB_AUTO_LOGIN_TOKEN (
+	AUTO_LOGIN_TOKEN				VARCHAR(500)		PRIMARY KEY		COMMENT '자동로그인토큰',
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	USER_AGENT						VARCHAR(256)		NOT NULL		COMMENT '유저에이전트',
+	EXPR_DTTM						DATETIME			NULL			COMMENT '만료일시'
+) COMMENT '자동로그인토큰';
+
+
+/* ######################################################### */
+/* 	[ TB_BATCH_EXECUTE_HIST ] 배치수행이력 */
+/* ######################################################### */
+-- DROP TABLE TB_BATCH_EXECUTE_HIST;
+SELECT * FROM TB_BATCH_EXECUTE_HIST;
+CREATE TABLE TB_BATCH_EXECUTE_HIST (
+	BATCH_NM						VARCHAR(100)		NOT NULL		COMMENT '배치명',
+	EXEC_DTTM						DATETIME			NULL			COMMENT '수행일시'						DEFAULT NOW(),
+	SUCCS_YN						CHAR(1)				NOT NULL		COMMENT '성공여부',
+	EXEC_RSLT						VARCHAR(1000)		NOT NULL		COMMENT '수행결과'
+) COMMENT '배치수행이력';
+
+
+/* ######################################################### */
+/*    [ TB_COMMUNITY_ATTACH_IMG ] 커뮤니티첨부이미지 */
+/* ######################################################### */
+-- DROP TABLE TB_COMMUNITY_ATTACH_IMG;
+SELECT * FROM TB_COMMUNITY_ATTACH_IMG;
+CREATE TABLE TB_COMMUNITY_ATTACH_IMG(
+	COMU_SEQNO						BIGINT(12)			NOT NULL		COMMENT '커뮤니티게시판시퀀스'			DEFAULT 0,
+	UPLOAD_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '업로드파일명',
+	SAVE_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '저장파일명',
+	FILE_URL						VARCHAR(300)		NOT NULL		COMMENT '파일URL',
+	SORT_SERL						DECIMAL(4,2)		NOT NULL		COMMENT '정렬순서'						DEFAULT 0.00,
+    REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+    DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '커뮤니티게시판';
+
+
+/* ######################################################### */
+/*    [ TB_COMMUNITY_POST ] 커뮤니티게시글 */
+/* ######################################################### */
+-- DROP TABLE TB_COMMUNITY_POST;
+SELECT * FROM TB_COMMUNITY_POST;
+CREATE TABLE TB_COMMUNITY_POST(
+	COMU_SEQNO						BIGINT(12)			PRIMARY KEY		COMMENT '커뮤니티게시글시퀀스'			AUTO_INCREMENT,
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	COMU_NOTI_YN					CHAR(1)				NOT NULL		COMMENT '커뮤니티공지여부'				DEFAULT 'N',
+	COMU_TYPE_CD					VARCHAR(30)			NOT NULL		COMMENT '커뮤니티타입코드'				DEFAULT 'C',
+	COMU_PREF_CD					VARCHAR(30)			NOT NULL		COMMENT '커뮤니티머리말코드'			DEFAULT 'F',
+	COMU_TITLE						VARCHAR(600)		NOT NULL		COMMENT '커뮤니티제목',
+	COMU_CONTENTS					TEXT				NOT NULL		COMMENT '커뮤니티내용',
+	COMU_VIDEO_URL					VARCHAR(600)		NULL			COMMENT '커뮤니티동영상URL',
+	COMU_LIKE_CNT					INT(7)				NOT NULL		COMMENT '커뮤니티좋아요수'				DEFAULT 0,
+	COMU_VIEW_CNT					INT(5)				NOT NULL		COMMENT '커뮤니티조회수'				DEFAULT 0,
+	COMU_REPLY_CNT					INT(5)				NOT NULL		COMMENT '커뮤니티댓글수'				DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'					DEFAULT NOW(),
+	MOD_DTTM						DATETIME			NULL			COMMENT '수정일시',
+	MOD_MEM_SEQNO					BIGINT(12)			NOT NULL		COMMENT '수정회원시퀀스'				DEFAULT 0,
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'					DEFAULT 'N'
+) COMMENT '커뮤니티게시글';
+
+
+
+/* ######################################################### */
+/*	[ TB_COMMUNITY_REPLY ] 커뮤니티댓글 */
+/* ######################################################### */
+-- DROP TABLE TB_COMMUNITY_REPLY;
+CREATE TABLE TB_COMMUNITY_REPLY(
+	COMU_RE_SEQNO					BIGINT(12)			PRIMARY KEY		COMMENT '커뮤니티댓글시퀀스'				AUTO_INCREMENT,
+	COMU_SEQNO						BIGINT(12)			NOT NULL		COMMENT '커뮤니티게시판시퀀스'				DEFAULT 0,
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'						DEFAULT 0,
+	TO_MEM_SEQNO					BIGINT(12)			NOT NULL		COMMENT '답글대상회원시퀀스'				DEFAULT 0,
+	COMU_RE_CONTENTS				VARCHAR(2000)		NOT NULL		COMMENT '댓글내용',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	MOD_DTTM						DATETIME			NULL			COMMENT '수정일시',
+	MOD_MEM_SEQNO					BIGINT(12)			NOT NULL		COMMENT '수정회원시퀀스'					DEFAULT 0,
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '커뮤니티댓글';
+
+
+/* ######################################################### */
+/*	[ TB_COMN_CD ] 공통코드 */
+/* ######################################################### */
+-- DROP TABLE TB_COMN_CD;
+SELECT * FROM TB_COMN_CD;
+CREATE TABLE TB_COMN_CD (
+	COMN_CD							VARCHAR(30)			NOT NULL		COMMENT '공통코드',
+	ITEM_CD							VARCHAR(30)			NOT NULL		COMMENT '항목코드',
+	UP_COMN_CD						VARCHAR(30)			NULL			COMMENT '상위공통코드',
+	UP_ITEM_CD						VARCHAR(30)			NULL			COMMENT '상위항목코드',
+	COMN_CD_NM						VARCHAR(100)		NOT NULL		COMMENT '공통코드명',
+	ITEM_CD_NM						VARCHAR(400)		NOT NULL		COMMENT '항목코드명',
+	RMK								VARCHAR(400)		NULL			COMMENT '비고',
+	SORT_SERL						DECIMAL(4,2)		NOT NULL		COMMENT '정렬순서'						DEFAULT 0.00,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '공통코드';
+-- CREATE UNIQUE INDEX IDX_COMN_CD ON TB_COMN_CD ( COMN_CD, ITEM_CD, UP_COMN_CD, UP_ITEM_CD );
+
+
+/* ######################################################### */
+/*	[ TB_COMPANY_MOVE_PROPOSAL_PROPERTY ] 기업이전제안매물 */
+/* ######################################################### */
+-- DROP TABLE TB_COMPANY_MOVE_PROPOSAL_PROPERTY;
+SELECT * FROM TB_COMPANY_MOVE_PROPOSAL_PROPERTY;
+CREATE TABLE TB_COMPANY_MOVE_PROPOSAL_PROPERTY (
+	MOV_PRPSL_PRPT_SEQNO			BIGINT(12)			PRIMARY KEY		COMMENT '이전제안매물시퀀스'				AUTO_INCREMENT,
+	COMP_SEQNO						BIGINT(12)			NOT NULL		COMMENT '기업시퀀스'					DEFAULT 0,
+	EST_BRK_MEM_OFC_SEQNO			BIGINT(12)			NOT NULL		COMMENT '중개회원사무소시퀀스'			DEFAULT 0,
+	ESTATE_TYP_GB_CD				VARCHAR(30)			NOT NULL		COMMENT '매물유형구분코드',
+	ESTATE_TYP_CD					VARCHAR(30)			NOT NULL		COMMENT '매물구분코드',
+	TRAN_TYP_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '거래유형구분코드',
+	BLD_NM							VARCHAR(200)		NOT NULL		COMMENT '건물명칭',
+	TMP_ADDR_YN						CHAR(1)				NOT NULL		COMMENT '임시주소여부'					DEFAULT 'N',
+	ADDR							VARCHAR(300)		NOT NULL		COMMENT '지번주소',
+	ROAD_ADDR						VARCHAR(500)		NOT NULL		COMMENT '도로명주소',
+	GRP_ADDR						VARCHAR(100)		NOT NULL		COMMENT '그룹핑주소',
+	LAT								DECIMAL(10,7)		NOT NULL		COMMENT '위도'						DEFAULT 0.0000000,
+	LNG								DECIMAL(10,7)		NOT NULL		COMMENT '경도'						DEFAULT 0.0000000,
+	SALES_COST						BIGINT(12)			NOT NULL		COMMENT '매매가(원)'					DEFAULT 0,
+	DPST_AMT						BIGINT(12)			NOT NULL		COMMENT '보증금액(원)'					DEFAULT 0,
+	MONT_RENT_AMT					INT(7)				NOT NULL		COMMENT '월임대료(원)'					DEFAULT 0,
+	PRMM_AMT						BIGINT(12)			NOT NULL		COMMENT '프리미엄금액(원)'				DEFAULT 0,
+	ACQSTN_TAX_RATIO				DECIMAL(4,2)		NOT NULL		COMMENT '취득세율(%)'					DEFAULT 0.00,
+	SUPPRT_AMT						BIGINT(12)			NOT NULL		COMMENT '지원금액(원)'					DEFAULT 0,
+	ETC_COST						BIGINT(12)			NOT NULL		COMMENT '기타비용(원)'					DEFAULT 0,
+	LOAN_RATIO1						DECIMAL(4,2)		NOT NULL		COMMENT '대출비율1(%)'					DEFAULT 0.00,
+	LOAN_RATIO2						DECIMAL(4,2)		NOT NULL		COMMENT '대출비율2(%)'					DEFAULT 0.00,
+	LOAN_INTR_RATIO					DECIMAL(4,2)		NOT NULL		COMMENT '대출금리(%)'					DEFAULT 0.00,
+	INVEST_YN						CHAR(1)				NULL			COMMENT '투자여부',
+	INVEST_DPST_AMT					BIGINT(12)			NOT NULL		COMMENT '투자보증금(원)'				DEFAULT 0,
+	INVEST_MONT_RENT_AMT			INT(7)				NOT NULL		COMMENT '투자월임대료(원)'				DEFAULT 0,
+	PRV_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '전용면적(평)'					DEFAULT 0.00,
+	FLR								INT(3)				NOT NULL		COMMENT '해당층수'						DEFAULT 0,
+	ALL_FLR							INT(3)				NOT NULL		COMMENT '전체층수'						DEFAULT 0,
+	MON_MNTNCE_COST					INT(8)				NOT NULL		COMMENT '월관리비(원)'					DEFAULT 0,
+	PSBL_MOV_DAY_TYP_CD				VARCHAR(30)			NULL			COMMENT '입주가능일유형코드',
+	PSBL_MOV_DATE					DATE				NULL			COMMENT '입주가능일자',
+	HEAT_KIND_GB_CD					VARCHAR(30)			NULL			COMMENT '난방종류구분코드',
+	PARKING_CAR_CNT					INT(5)				NOT NULL		COMMENT '총주차대수'					DEFAULT 0,
+	BLD_SPCL_ADVTG_DSCR				TEXT				NULL			COMMENT '건물특장점내용',
+	REQ_DSCR						TEXT				NULL			COMMENT '요청사항내용',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '기업이전제안매물';
+
+
+/* ######################################################### */
+/*	[ TB_COMPANY_MOVE_PROPOSAL_PROPERTY_FACILITY_TYPS ] 기업이전제안건물시설유형 */
+/* ######################################################### */
+-- DROP TABLE TB_COMPANY_MOVE_PROPOSAL_PROPERTY_FACILITY_TYPS;
+SELECT * FROM TB_COMPANY_MOVE_PROPOSAL_PROPERTY_FACILITY_TYPS;
+CREATE TABLE TB_COMPANY_MOVE_PROPOSAL_PROPERTY_FACILITY_TYPS (
+	MOV_PRPSL_PRPT_SEQNO			BIGINT(12)			NOT NULL		COMMENT '이전제안매물시퀀스'				DEFAULT 0,
+	COMP_PRPSL_BLD_FAC_TYP_CD		VARCHAR(30)			NOT NULL		COMMENT '기업이전제안건물시설유형코드'
+) COMMENT '기업이전제안건물시설유형';
+
+
+/* ######################################################### */
+/*	[ TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS ] 기업이전제안사진 */
+/* ######################################################### */
+-- DROP TABLE TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS;
+SELECT * FROM TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS;
+CREATE TABLE TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS (
+	MOV_PRPSL_PRPT_SEQNO			BIGINT(12)			NOT NULL		COMMENT '이전제안매물시퀀스'				DEFAULT 0,
+	SORT_SERL						DECIMAL(4,2)		NOT NULL		COMMENT '정렬순서'						DEFAULT 0.00,
+	SAVE_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '저장파일명',
+	FILE_URL						VARCHAR(300)		NOT NULL		COMMENT '파일URL',
+	PHOTO_GB						CHAR(1)				NOT NULL		COMMENT '사진구분',
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '기업이전제안사진';
+
+
+/* ######################################################### */
+/*	[ TB_EDUCATION_DATA_ATTACHMENT ] 교육자료첨부파일 */
+/* ######################################################### */
+-- DROP TABLE TB_EDUCATION_DATA_ATTACHMENT;
+SELECT * FROM TB_EDUCATION_DATA_ATTACHMENT;
+CREATE TABLE TB_EDUCATION_DATA_ATTACHMENT (
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	SAVE_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '저장파일명',
+	FILE_URL						VARCHAR(300)		NOT NULL		COMMENT '파일URL',
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '교육자료첨부파일';
+
+
+/* ######################################################### */
+/*	[ TB_ESTATE_BROKER_MEMBER_ATTACHMENT ] 중계회원첨부파일 */
+/* ######################################################### */
+-- DROP TABLE TB_ESTATE_BROKER_MEMBER_ATTACHMENT;
+SELECT * FROM TB_ESTATE_BROKER_MEMBER_ATTACHMENT;
+CREATE TABLE TB_ESTATE_BROKER_MEMBER_ATTACHMENT (
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	ATTCH_FILE_GB_CD				VARCHAR(30)			NOT NULL		COMMENT '첨부파일구분코드',
+	UPLOAD_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '업로드파일명',
+	SAVE_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '저장파일명',
+	FILE_URL						VARCHAR(300)		NOT NULL		COMMENT '파일URL',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '중계회원첨부파일';
+
+
+/* ######################################################### */
+/*	[ TB_ESTATE_BROKER_MEMBER_COMPANY ] 중개회원관리기업 */
+/* ######################################################### */
+-- DROP TABLE TB_ESTATE_BROKER_MEMBER_COMPANY;
+SELECT * FROM TB_ESTATE_BROKER_MEMBER_COMPANY;
+CREATE TABLE TB_ESTATE_BROKER_MEMBER_COMPANY (
+	COMP_SEQNO						BIGINT(12)			PRIMARY KEY		COMMENT '기업시퀀스'					AUTO_INCREMENT,
+	EST_BRK_MEM_OFC_SEQNO			BIGINT(12)			NOT NULL		COMMENT '중개회원사무소시퀀스'			DEFAULT 0,
+	COMP_NM							VARCHAR(120)		NOT NULL		COMMENT '기업명',
+	EST_BRK_DISP_POS_NM				VARCHAR(60)			NOT NULL		COMMENT '중개사표시직책명',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '중개회원관리기업';
+
+
+/* ######################################################### */
+/* 	[ TB_ESTATE_BROKER_MEMBER_OFFICE_INFO ] 중개회원중개사무소정보 */
+/* ######################################################### */
+-- DROP TABLE TB_ESTATE_BROKER_MEMBER_OFFICE_INFO;
+SELECT * FROM TB_ESTATE_BROKER_MEMBER_OFFICE_INFO;
+CREATE TABLE TB_ESTATE_BROKER_MEMBER_OFFICE_INFO (
+	EST_BRK_MEM_OFC_SEQNO			BIGINT(12)			PRIMARY KEY		COMMENT '중개회원사무소시퀀스'			AUTO_INCREMENT,
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	BIZ_NO							CHAR(10)			NOT NULL		COMMENT '사업자등록번호',
+	OPEN_REG_NO						VARCHAR(30)			NOT NULL		COMMENT '개설등록번호',
+	OPEN_REG_DATE					DATE				NULL			COMMENT '개설등록일자',
+	OFC_NM							VARCHAR(120)		NOT NULL		COMMENT '중개사무소명',
+	REPR_NM							VARCHAR(30)			NOT NULL		COMMENT '대표자명',
+	TEL_NO							VARCHAR(20)			NULL			COMMENT '전화번호',
+	ADDR							VARCHAR(300)		NULL			COMMENT '주소',
+	ADDR_SHORT_NM					VARCHAR(100)		NULL			COMMENT '단축주소(시구군읍면동)',
+	LAT								DECIMAL(10,7)		NOT NULL		COMMENT '위도'						DEFAULT 0.0000000,
+	LNG								DECIMAL(10,7)		NOT NULL		COMMENT '경도'						DEFAULT 0.0000000,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	MOD_DTTM						DATETIME			NULL			COMMENT '수정일시'
+) COMMENT '중개회원중개사무소정보';
+CREATE UNIQUE INDEX IDX_ESTATE_BROKER_MEMBER_OFFICE_INFO ON TB_ESTATE_BROKER_MEMBER_OFFICE_INFO ( BIZ_NO );
+CREATE UNIQUE INDEX IDX_ESTATE_BROKER_MEMBER_OFFICE_INFO_OFC ON TB_ESTATE_BROKER_MEMBER_OFFICE_INFO ( OPEN_REG_NO, OFC_NM );
+
+
+/* ######################################################### */
+/* 	[ TB_ESTATE_BROKER_OFFICE ] 공인중개사무소 */
+/* ######################################################### */
+-- DROP TABLE TB_ESTATE_BROKER_OFFICE;
+SELECT * FROM TB_ESTATE_BROKER_OFFICE;
+CREATE TABLE TB_ESTATE_BROKER_OFFICE (
+	EST_BRK_OFC_SEQNO				BIGINT(12)			PRIMARY KEY		COMMENT '공인중개사무소시퀀스'			AUTO_INCREMENT,
+	OPEN_REG_NO						VARCHAR(30)			NOT NULL		COMMENT '개설등록번호',
+	OPEN_REG_DATE					DATE				NULL			COMMENT '개설등록일자',
+	OPEN_EST_BRK_CLAS_GB			VARCHAR(30)			NOT NULL		COMMENT '개업공인중개사종별구분',
+	OFC_NM							VARCHAR(120)		NOT NULL		COMMENT '중개사무소명',
+	MTL_JOIN_YN						CHAR(1)				NOT NULL		COMMENT '공제가입여부'					DEFAULT 'N',
+	REPR_NM							VARCHAR(30)			NOT NULL		COMMENT '대표자명',
+	TEL_NO							VARCHAR(20)			NULL			COMMENT '전화번호',
+	ADDR_ROAD						VARCHAR(300)		NULL			COMMENT '도로명주소',
+	ADDR_POST						VARCHAR(300)		NULL			COMMENT '지번주소',
+	EST_BRK_CNT						INT(3)				NOT NULL		COMMENT '소속공인중개사수'				DEFAULT 0,
+	EST_ASST_CNT					INT(3)				NOT NULL		COMMENT '중개보조원수'					DEFAULT 0,
+	LAT								DECIMAL(10,7)		NOT NULL		COMMENT '위도'						DEFAULT 0.0000000,
+	LNG								DECIMAL(10,7)		NOT NULL		COMMENT '경도'						DEFAULT 0.0000000,
+	DATA_STND_DATE					DATE				NULL			COMMENT '데이터기준일자',
+	OFFR_INST_CD					CHAR(7)				NOT NULL		COMMENT '제공기관코드',
+	OFFR_INST_NM					VARCHAR(100)		NOT NULL		COMMENT '제공기관명',
+	MOD_DTTM						DATETIME			NULL			COMMENT '수정일시'
+) COMMENT '공인중개사무소';
+CREATE UNIQUE INDEX IDX_ESTATE_BROKER_OFFICE ON TB_ESTATE_BROKER_OFFICE ( OPEN_REG_NO, OFC_NM );
+
+
+/* ######################################################### */
+/* 	[ TB_FAVORITE_PROPERTY ] 관심매물 */
+/* ######################################################### */
+-- DROP TABLE TB_FAVORITE_PROPERTY;
+SELECT * FROM TB_FAVORITE_PROPERTY;
+CREATE TABLE TB_FAVORITE_PROPERTY (
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	PRPT_SEQNO						BIGINT(12)			NOT NULL		COMMENT '매물시퀀스'					DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW()
+) COMMENT '관심매물';
+CREATE UNIQUE INDEX IDX_FAVORITE_PROPERTY ON TB_FAVORITE_PROPERTY ( MEM_SEQNO, PRPT_SEQNO );
+
+
+/* ######################################################### */
+/* 	[ TB_FAVORITE_SUGGESTION_SALES ] 관심추천분양 */
+/* ######################################################### */
+-- DROP TABLE TB_FAVORITE_SUGGESTION_SALES;
+SELECT * FROM TB_FAVORITE_SUGGESTION_SALES;
+CREATE TABLE TB_FAVORITE_SUGGESTION_SALES (
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW()
+) COMMENT '관심추천분양';
+CREATE UNIQUE INDEX IDX_FAVORITE_SUGGESTION_SALES ON TB_FAVORITE_SUGGESTION_SALES ( MEM_SEQNO, SUGGSTN_SALES_SEQNO );
+
+
+/* ######################################################### */
+/* 	[ TB_KAKAO_MESSAGE_SEND_HIST ] 알림톡메시지발송이력 */
+/* ######################################################### */
+-- DROP TABLE TB_KAKAO_MESSAGE_SEND_HIST;
+SELECT * FROM TB_KAKAO_MESSAGE_SEND_HIST;
+CREATE TABLE TB_KAKAO_MESSAGE_SEND_HIST (
+	MSG_SEND_HIST_SEQNO				BIGINT(14)			PRIMARY KEY		COMMENT '메시지발송이력시퀀스'			AUTO_INCREMENT,
+	RCPNT_MOB_NO					VARCHAR(20)			NOT NULL		COMMENT '수신자핸드폰번호',
+	MSG_TMPLT_CD					VARCHAR(10)			NOT NULL		COMMENT '메시지템플릿코드',
+	MSG_MAPPNG_VAL					VARCHAR(400)		NULL			COMMENT '메시지매핑값',
+	REQ_ID							VARCHAR(50)			NOT NULL		COMMENT '요청아이디',
+	REQ_DTTM						DATETIME			NULL			COMMENT '요청일시'						DEFAULT NOW(),
+	REQ_RSLT						VARCHAR(400)		NOT NULL		COMMENT '요청결과',
+	SEND_RSLT						VARCHAR(400)		NULL			COMMENT '발송결과',
+	RESEND_STAT_CD					VARCHAR(30)			NULL			COMMENT '대체발송상태코드'
+) COMMENT '알림톡메시지발송이력';
+
+
+/* ######################################################### */
+/* 	[ TB_KNOWLEDGE_INDUSTRY_COMPLEX ] 지식산업센터 */
+/* ######################################################### */
+-- DROP TABLE TB_KNOWLEDGE_INDUSTRY_COMPLEX;
+SELECT * FROM TB_KNOWLEDGE_INDUSTRY_COMPLEX;
+CREATE TABLE TB_KNOWLEDGE_INDUSTRY_COMPLEX (
+	KNWLDG_IND_CMPLX_SEQNO			BIGINT(12)			PRIMARY KEY		COMMENT '지식산업센터시퀀스'				AUTO_INCREMENT,
+	PRPT_REG_NO						CHAR(13)			NOT NULL		COMMENT '매물번호',
+	ADDR							VARCHAR(300)		NOT NULL		COMMENT '주소',
+	ADDR_SHORT_NM					VARCHAR(100)		NULL			COMMENT '단축주소(시구군읍면동)',
+	LAT								DECIMAL(10,7)		NOT NULL		COMMENT '위도'						DEFAULT 0.0000000,
+	LNG								DECIMAL(10,7)		NOT NULL		COMMENT '경도'						DEFAULT 0.0000000,
+	BLD_NM							VARCHAR(200)		NOT NULL		COMMENT '건물명칭',
+	CMPLTN_DATE						DATE				NULL			COMMENT '준공일자',
+	ASK_SALES_MIN_PRC				BIGINT(12)			NOT NULL		COMMENT '최저매매호가(원)'				DEFAULT 0,
+	ASK_SALES_AVG_PRC				BIGINT(12)			NOT NULL		COMMENT '평균매매호가(원)'				DEFAULT 0,
+	ASK_SALES_MAX_PRC				BIGINT(12)			NOT NULL		COMMENT '최고매매호가(원)'				DEFAULT 0,
+	ASK_LEASE_MIN_PRC				BIGINT(12)			NOT NULL		COMMENT '최저임대호가(원)'				DEFAULT 0,
+	ASK_LEASE_AVG_PRC				BIGINT(12)			NOT NULL		COMMENT '평균임대호가(원)'				DEFAULT 0,
+	ASK_LEASE_MAX_PRC				BIGINT(12)			NOT NULL		COMMENT '최고임대호가(원)'				DEFAULT 0,
+	LND_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '대지면적(평)'					DEFAULT 0.00,
+	BLD_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '건축면적(평)'					DEFAULT 0.00,
+	TOT_FLR_AREA					DECIMAL(10,2)		NOT NULL		COMMENT '연면적(평)'					DEFAULT 0.00,
+	MIN_FLR							INT(2)				NOT NULL		COMMENT '최저층'						DEFAULT 0,
+	MAX_FLR							INT(3)				NOT NULL		COMMENT '최고층'						DEFAULT 0,
+	PARKING_CAR_CNT					INT(5)				NOT NULL		COMMENT '총주차대수'						DEFAULT 0,
+	HUS_HOLD_CNT					INT(5)				NOT NULL		COMMENT '총세대수'						DEFAULT 0,
+	DEV_COMP_NM						VARCHAR(200)		NULL			COMMENT '시행사명',
+	CONST_COMP_NM					VARCHAR(200)		NULL			COMMENT '시공사명',
+	TRFC_INFO						TEXT				NULL			COMMENT '교토정보',
+	SITE_EXPLNTN					TEXT				NULL			COMMENT '현장설명',
+	SMPL_SMR_DSCR					VARCHAR(800)		NULL			COMMENT '한줄요약내용',
+	REG_MEM_SEQNO					BIGINT(12)			NOT NULL		COMMENT '등록회원시퀀스'				DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '지식산업센터';
+CREATE UNIQUE INDEX IDX_KNOWLEDGE_INDUSTRY_COMPLEX ON TB_KNOWLEDGE_INDUSTRY_COMPLEX ( PRPT_REG_NO );
+
+
+/* ######################################################### */
+/* 	[ TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES ] 지식산업센터첨부이미지 */
+/* ######################################################### */
+-- DROP TABLE TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES;
+SELECT * FROM TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES;
+CREATE TABLE TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES (
+	KNWLDG_IND_CMPLX_SEQNO			BIGINT(12)			NOT NULL		COMMENT '지식산업센터시퀀스'				DEFAULT 0,
+	KNWLDG_CMPLX_ATCH_IMG_TYP_CD	VARCHAR(30)			NOT NULL		COMMENT '지식산업센터첨부이미지유형구분코드',
+	UPLOAD_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '업로드파일명',
+	SAVE_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '저장파일명',
+	FILE_URL						VARCHAR(300)		NOT NULL		COMMENT '파일URL',
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '지식산업센터첨부이미지';
+
+
+/* ######################################################### */
+/* 	[ TB_LOGIN_TOKEN ] 로그인토큰 */
+/* ######################################################### */
+-- DROP TABLE TB_LOGIN_TOKEN;
+SELECT * FROM TB_LOGIN_TOKEN;
+CREATE TABLE TB_LOGIN_TOKEN (
+	MEM_TYP_CD						VARCHAR(30)			NOT NULL		COMMENT '회원유형코드',
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스',
+	LOGIN_TOKEN						VARCHAR(200)		NOT NULL		COMMENT '로그인토큰',
+	EXPR_DTTM						DATETIME			NULL			COMMENT '만료일시'
+) COMMENT '로그인토큰';
+CREATE UNIQUE INDEX IDX_LOGIN_TOKEN ON TB_LOGIN_TOKEN ( MEM_TYP_CD, MEM_SEQNO, LOGIN_TOKEN );
+
+
+/* ######################################################### */
+/* 	[ TB_MEMBER ] 회원 */
+/* ######################################################### */
+-- DROP TABLE TB_MEMBER;
+SELECT * FROM TB_MEMBER;
+CREATE TABLE TB_MEMBER (
+	MEM_SEQNO						BIGINT(12)			PRIMARY KEY		COMMENT '회원시퀀스'					AUTO_INCREMENT,
+	MEM_TYP_CD						VARCHAR(30)			NOT NULL		COMMENT '회원유형코드(A/E/N)',
+	ACNT_APRV_STAT_CD				VARCHAR(30)			NOT NULL		COMMENT '계정승인상태코드'				DEFAULT 'N',
+	APRV_TREAT_MEM_SEQNO			BIGINT(12)			NOT NULL		COMMENT '승인처리회원시퀀스'				DEFAULT 0,
+	APRV_TREAT_DTTM					DATETIME			NULL			COMMENT '승인처리일시',
+	ACTV_STAT_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '활동상태구분코드'				DEFAULT 'NOR',
+	SNS_GB_CD						VARCHAR(30)			NULL			COMMENT 'SNS구분코드(N/K)',
+	EMAIL							VARCHAR(50)			NOT NULL		COMMENT '이메일(아이디)',
+	PWD								VARCHAR(200)		NULL			COMMENT '비밀번호',
+	MEM_NAME						VARCHAR(50)			NOT NULL		COMMENT '회원성명',
+	MOB_NO							VARCHAR(50)			NOT NULL		COMMENT '휴대폰번호',
+	PRFL_IMG_URL					VARCHAR(300)		NULL			COMMENT '프로필이미지URL',
+	SNS_ID							VARCHAR(30)			NULL			COMMENT 'SNS고유아이디',
+	BIRTH_YEAR						CHAR(4)				NULL			COMMENT '출생년도',
+	BIRTH_DAY						CHAR(4)				NULL			COMMENT '생일',
+	AGE_LVL							VARCHAR(30)			NULL			COMMENT '연령대',
+	GENDER_CD						VARCHAR(30)			NULL			COMMENT '성별',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	MOD_DTTM						DATETIME			NULL			COMMENT '수정일시',
+	RMK								VARCHAR(800)		NULL			COMMENT '비고',
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N',
+	DEL_DTTM						DATETIME			NULL			COMMENT '삭제일시'
+) COMMENT '회원';
+CREATE UNIQUE INDEX IDX_MEMBER ON TB_MEMBER ( EMAIL );
+
+
+/* ######################################################### */
+/* 	[ TB_MEMBER_LOGIN_HIST ] 회원로그인이력 */
+/* ######################################################### */
+-- DROP TABLE TB_MEMBER_LOGIN_HIST;
+SELECT * FROM TB_MEMBER_LOGIN_HIST;
+CREATE TABLE TB_MEMBER_LOGIN_HIST (
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	ACCS_IP							VARCHAR(20)			NOT NULL		COMMENT '접속IP',
+	USER_AGENT						VARCHAR(256)		NOT NULL		COMMENT '유저에이전트',
+	LOGIN_HIST_GB_CD				VARCHAR(30)			NOT NULL		COMMENT '로그인이력구분코드',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW()
+) COMMENT '회원로그인이력';
+
+
+/* ######################################################### */
+/* 	[ TB_MOBILE_VERIFICATION ] 휴대폰번호인증 */
+/* ######################################################### */
+-- DROP TABLE TB_MOBILE_VERIFICATION;
+SELECT * FROM TB_MOBILE_VERIFICATION;
+CREATE TABLE TB_MOBILE_VERIFICATION (
+	MOB_NO							VARCHAR(12)			NOT NULL		COMMENT '휴대폰번호',
+	MOB_VRF_NO						CHAR(6)				NOT NULL		COMMENT '휴대폰인증번호',
+	VRF_FAIL_CNT					INT(1)				NOT NULL		COMMENT '인증실패횟수'					DEFAULT 0,
+	VRF_EXPR_DTTM					DATETIME			NULL			COMMENT '인증만료일시',
+	VRF_CNFRM_TOKEN					CHAR(32)			NULL			COMMENT '검증확인토큰'
+) COMMENT '휴대폰번호인증';
+CREATE UNIQUE INDEX IDX_MOBILE_VERIFICATION ON TB_MOBILE_VERIFICATION ( MOB_NO );
+
+
+/* ######################################################### */
+/* 	[ TB_NOTIFICATION ] 알림함 */
+/* ######################################################### */
+-- DROP TABLE TB_NOTIFICATION;
+SELECT * FROM TB_NOTIFICATION;
+CREATE TABLE TB_NOTIFICATION (
+	NOTI_SEQNO						BIGINT(12)			PRIMARY KEY		COMMENT '알림시퀀스'					AUTO_INCREMENT,
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	NOTI_GB_CD						VARCHAR(30)			NOT NULL		COMMENT '알림구분코드',
+	NOTI_TYP_GB_CD					VARCHAR(30)			NULL			COMMENT '공지알림유형구분코드',
+	NOTI_TTL						VARCHAR(200)		NOT NULL		COMMENT '알림제목',
+	NOTI_DSCR						VARCHAR(2000)		NULL			COMMENT '알림내용',
+	PRPT_SEQNO						BIGINT(12)			NOT NULL		COMMENT '매물시퀀스'					DEFAULT 0,
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	CNFRM_YN						CHAR(1)				NOT NULL		COMMENT '확인여부'						DEFAULT 'N'
+) COMMENT '알림함';
+
+
+/* ######################################################### */
+/* 	[ TB_PROPERTY ] 매물정보 */
+/* ######################################################### */
+-- DROP TABLE TB_PROPERTY_NEW;
+SELECT * FROM TB_PROPERTY;
+CREATE TABLE TB_PROPERTY (
+	PRPT_SEQNO						BIGINT(12)			PRIMARY KEY		COMMENT '매물시퀀스'					AUTO_INCREMENT,
+	EST_BRK_MEM_OFC_SEQNO			BIGINT(12)			NOT NULL		COMMENT '중개사무소시퀀스'				DEFAULT 0,
+	PRPT_REG_NO						CHAR(13)			NOT NULL		COMMENT '매물등록번호',
+	ESTATE_TYP_GB_CD				VARCHAR(30)			NOT NULL		COMMENT '매물유형구분코드',
+	ESTATE_TYP_CD					VARCHAR(30)			NOT NULL		COMMENT '매물구분코드',
+	TRAN_TYP_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '거래유형구분코드',
+	DEAL_AMT						BIGINT(12)			NOT NULL		COMMENT '거래금액(원)'					DEFAULT 0,
+	DEAL_AMT_DISCSN_PSBL_YN			CHAR(1)				NOT NULL		COMMENT '거래금액협의가능여부'			DEFAULT 'N',
+	DPST_AMT						BIGINT(12)			NOT NULL		COMMENT '보증금액(원)'					DEFAULT 0,
+	MONT_RENT_AMT					BIGINT(12)			NOT NULL		COMMENT '월임대료(원)'					DEFAULT 0,
+	EXISTNG_LEASE_EXSTS_YN			CHAR(1)				NULL			COMMENT '기존임대차존재여부',
+	CRNT_DPST_AMT					BIGINT(12)			NOT NULL		COMMENT '현재보증금액(원)'				DEFAULT 0,
+	CRNT_MONT_RENT_AMT				INT(7)				NOT NULL		COMMENT '현재월임대료(원)'				DEFAULT 0,
+	KEY_MON_EXSTS_YN				CHAR(1)				NULL			COMMENT '권리금존재여부',
+	KEY_MON_AMT						BIGINT(12)			NOT NULL		COMMENT '권리금액(원)'					DEFAULT 0,
+	PRMM_AMT						BIGINT(12)			NOT NULL		COMMENT '프리미엄금액(원)'				DEFAULT 0,
+	CMPLT_EXPCT_DATE				DATE				NULL			COMMENT '준공예정일자',
+	ADDR							VARCHAR(300)		NOT NULL		COMMENT '주소',
+	DTL_ADDR						VARCHAR(100)		NULL			COMMENT '상세주소',
+	ADDR_SHORT_NM					VARCHAR(100)		NULL			COMMENT '단축주소(시구군읍면동)',
+	LAT								DECIMAL(10,7)		NOT NULL		COMMENT '위도'						DEFAULT 0.0000000,
+	LNG								DECIMAL(10,7)		NOT NULL		COMMENT '경도'						DEFAULT 0.0000000,
+	MAP_DISP_YN						CHAR(1)				NOT NULL		COMMENT '지도노출여부'					DEFAULT 'Y',
+	TMP_ADDR_YN						CHAR(1)				NOT NULL		COMMENT '임시주소여부'					DEFAULT 'N',
+	UNREGIST_YN						CHAR(1)				NULL			COMMENT '미등기여부',
+	FLR								INT(3)				NOT NULL		COMMENT '해당층수'						DEFAULT 0,
+	ALL_FLR							INT(3)				NOT NULL		COMMENT '전체층수'						DEFAULT 0,
+	MIN_FLR							INT(3)				NOT NULL		COMMENT '최저층수'						DEFAULT 0,
+	MAX_FLR							INT(3)				NOT NULL		COMMENT '최고층수'						DEFAULT 0,
+	SPLY_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '공급면적(평)'					DEFAULT 0.00,
+	PRV_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '전용면적(평)'					DEFAULT 0.00,
+	LND_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '대지면적(평)'					DEFAULT 0.00,
+	TOT_FLR_AREA					DECIMAL(10,2)		NOT NULL		COMMENT '연면적(평)'					DEFAULT 0.00,
+	USE_CNFRM_DATE					DATE				NULL			COMMENT '사용승인일자',
+	BLD_USAGE_GB_CD					VARCHAR(30)			NULL			COMMENT '건축물용도(주용도)구분코드',
+	SUGGSTN_BLD_USAGE_GB_CD			VARCHAR(30)			NULL			COMMENT '추천건축물용도구분코드',
+	LND_CRNT_USAGE_GB_CD			VARCHAR(30)			NULL			COMMENT '토지임야현재용도구분코드',
+	PSBL_MOV_DAY_TYP_CD				VARCHAR(30)			NULL			COMMENT '입주가능일유형코드',
+	PSBL_MOV_DATE					DATE				NULL			COMMENT '입주가능일자',
+	MON_MNTNCE_COST					INT(8)				NOT NULL		COMMENT '월관리비(원)'					DEFAULT 0,
+	LOAN_GB_CD						VARCHAR(30)			NOT NULL		COMMENT '융자금구분코드'				DEFAULT 'NOT',
+	LOAN_AMT						BIGINT(12)			NOT NULL		COMMENT '융자금액(원)'					DEFAULT 0,
+	PARKING_PSBL_YN					CHAR(1)				NULL			COMMENT '주차가능여부',
+	PARKING_COST					INT(7)				NOT NULL		COMMENT '주차비용(원)'					DEFAULT 0,
+	ROOM_CNT						INT(3)				NOT NULL		COMMENT '방수'						DEFAULT 0,
+	BATH_ROOM_CNT					INT(2)				NOT NULL		COMMENT '욕실수'						DEFAULT 0,
+	CRNT_SECTR_GB_CD				VARCHAR(30)			NULL			COMMENT '현업종구분코드',
+	SUGGSTN_SECTR_GB_CD				VARCHAR(30)			NULL			COMMENT '추천업종구분코드',
+	BLD_DIRCTN_GB_CD				VARCHAR(30)			NULL			COMMENT '건물방향구분코드',
+	HEAT_KIND_GB_CD					VARCHAR(30)			NULL			COMMENT '난방종류구분코드',
+	WGHT_PER_PY						DECIMAL(4,2)		NOT NULL		COMMENT '평당하중(톤)'					DEFAULT 0.00,
+	ELV_FCLT_EXSTS_YN				CHAR(1)				NULL			COMMENT '승강시설존재여부',
+	FRHGT_ELV_EXSTS_YN				CHAR(1)				NULL			COMMENT '화물용승강시설여부',
+	INTRR_YN						CHAR(1)				NULL			COMMENT '인테리어여부',
+	DOCK_EXSTS_YN					CHAR(1)				NULL			COMMENT '도크존재여부',
+	HOIST_EXSTS_YN					CHAR(1)				NULL			COMMENT '호이스트존재여부',
+	FLR_HGHT_TYP_GB_CD				VARCHAR(30)			NULL			COMMENT '층고유형구분코드',
+	ELCTR_PWR_TYP_GB_CD				VARCHAR(30)			NULL			COMMENT '사용전력유형구분코드',
+	INTNL_STRCTR_TYP_CD				VARCHAR(30)			NULL			COMMENT '내부구조유형코드',
+	BULT_IN_YN						CHAR(1)				NULL			COMMENT '빌트인여부',
+	MOV_IN_REPRT_PSBL_YN			CHAR(1)				NULL			COMMENT '전입신고가능여부',
+	CITY_PLAN_YN					CHAR(1)				NULL			COMMENT '도시계획여부',
+	BLD_CNFRM_ISSUE_YN				CHAR(1)				NULL			COMMENT '건축허가발급여부',
+	LND_DEAL_CNFRM_APPL_YN			CHAR(1)				NULL			COMMENT '토지거래허가구역해당여부',
+	ENTRNCE_ROAD_EXSTS_YN			CHAR(1)				NULL			COMMENT '진입도로존재여부',
+	OPTION_EXSTS_YN					CHAR(1)				NULL			COMMENT '옵션존재여부',
+	DEAL_STAT_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '거래상태구분코드'				DEFAULT 'ING',
+	ADMIN_CNFRM_YN					CHAR(1)				NOT NULL		COMMENT '관리자확인여부'				DEFAULT 'Y',
+	ADMIN_CNFRM_DTTM				DATETIME			NULL			COMMENT '관리자확인일시',
+	REG_MEM_SEQNO					BIGINT(12)			NOT NULL		COMMENT '등록회원시퀀스'				DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '매물정보';
+CREATE UNIQUE INDEX IDX_PROPERTY ON TB_PROPERTY( PRPT_REG_NO );
+
+
+/* ######################################################### */
+/* 	[ TB_PROPERTY_MAINTENANCE_TYPS ] 매물관리비유형 */
+/* ######################################################### */
+-- DROP TABLE TB_PROPERTY_MAINTENANCE_TYPS;
+SELECT * FROM TB_PROPERTY_MAINTENANCE_TYPS;
+CREATE TABLE TB_PROPERTY_MAINTENANCE_TYPS (
+	PRPT_SEQNO						BIGINT(12)			NOT NULL		COMMENT '매물시퀀스'					DEFAULT 0,
+	MNTNCE_COST_TYP_CD				VARCHAR(30)			NOT NULL		COMMENT '관리비유형코드'
+) COMMENT '매물관리비유형';
+
+
+/* ######################################################### */
+/* 	[ TB_PROPERTY_MAINTENANCE_TYPS ] 매물옵션유형 */
+/* ######################################################### */
+-- DROP TABLE TB_PROPERTY_OPTION_TYPS;
+SELECT * FROM TB_PROPERTY_OPTION_TYPS;
+CREATE TABLE TB_PROPERTY_OPTION_TYPS (
+	PRPT_SEQNO						BIGINT(12)			NOT NULL		COMMENT '매물시퀀스'					DEFAULT 0,
+	OPTION_ITEM_TYP_GB_CD			VARCHAR(30)			NOT NULL		COMMENT '옵션항목유형구분코드',
+	OPTION_ITEM_TYP_CD				VARCHAR(30)			NOT NULL		COMMENT '옵션항목구분코드'
+) COMMENT '매물옵션유형';
+
+
+/* ######################################################### */
+/* 	[ TB_PROPERTY_PHOTO_INFO ] 매물사진정보 */
+/* ######################################################### */
+-- DROP TABLE TB_PROPERTY_PHOTO_INFO;
+SELECT * FROM TB_PROPERTY_PHOTO_INFO;
+CREATE TABLE TB_PROPERTY_PHOTO_INFO (
+	PRPT_SEQNO						BIGINT(12)			NOT NULL		COMMENT '매물시퀀스'					DEFAULT 0,
+	SMPL_SMR_DSCR					VARCHAR(800)		NULL			COMMENT '한줄요약내용',
+	DTL_EXPLNTN_DSCR				TEXT				NULL			COMMENT '상세설명내용',
+	MATTER_PORT_LINK_URL			VARCHAR(200)		NULL			COMMENT '메타포트링크URL',
+	PRVT_MEMO_DSCR					TEXT				NULL			COMMENT '비공개메모내용'
+) COMMENT '매물사진정보';
+
+
+/* ######################################################### */
+/* 	[ TB_PROPERTY_PHOTOS ] 매물사진 */
+/* ######################################################### */
+-- DROP TABLE TB_PROPERTY_PHOTOS;
+SELECT * FROM TB_PROPERTY_PHOTOS;
+CREATE TABLE TB_PROPERTY_PHOTOS (
+	PRPT_SEQNO						BIGINT(12)			NOT NULL		COMMENT '매물시퀀스'					DEFAULT 0,
+	UPLOAD_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '업로드파일명',
+	SAVE_FILE_NM					VARCHAR(200)		NOT NULL		COMMENT '저장파일명',
+	FILE_URL						VARCHAR(300)		NOT NULL		COMMENT '파일URL',
+	REP_PHOTO_YN					CHAR(1)				NOT NULL		COMMENT '대표사진여부'					DEFAULT 'N',
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '매물사진';
+
+
+/* ######################################################### */
+/* 	[ TB_PROPERTY_SUGGEST ] 매물제안 */
+/* ######################################################### */
+-- DROP TABLE TB_PROPERTY_SUGGEST;
+SELECT * FROM TB_PROPERTY_SUGGEST;
+CREATE TABLE TB_PROPERTY_SUGGEST (
+	PRPT_SUGGST_SEQNO				BIGINT(12)			PRIMARY KEY		COMMENT '매물제안시퀀스'				AUTO_INCREMENT,
+	PRPT_SUGGST_REQ_SEQNO			BIGINT(12)			NOT NULL		COMMENT '매물제안요청시퀀스'				DEFAULT 0,
+	PRPT_SEQNO						BIGINT(12)			NOT NULL		COMMENT '매물시퀀스'
+) COMMENT '매물제안';
+
+
+/* ######################################################### */
+/* 	[ TB_PROPERTY_SUGGEST_REQUEST ] 매물제안요청 */
+/* ######################################################### */
+-- DROP TABLE TB_PROPERTY_SUGGEST_REQUEST;
+SELECT * FROM TB_PROPERTY_SUGGEST_REQUEST;
+CREATE TABLE TB_PROPERTY_SUGGEST_REQUEST (
+	PRPT_SUGGST_REQ_SEQNO			BIGINT(12)			PRIMARY KEY		COMMENT '매물제안요청시퀀스'				AUTO_INCREMENT,
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	ESTATE_TYP_CD					VARCHAR(30)			NOT NULL		COMMENT '매물구분코드',
+	TRAN_TYP_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '거래유형구분코드',
+	WISH_AREA						DECIMAL(10,2)		NOT NULL		COMMENT '희망면적(평)'					DEFAULT 0.00,
+	SECTR_GB_CD						VARCHAR(30)			NULL			COMMENT '업종구분코드',
+	USE_PPL_CNT						INT(4)				NOT NULL		COMMENT '사용인원'						DEFAULT 0,
+	PSBL_MOV_DAY_TYP_CD				VARCHAR(30)			NOT NULL		COMMENT '입주가능일유형코드',
+	PSBL_MOV_ST_DATE				DATE				NULL			COMMENT '입주가능시작일자',
+	PSBL_MOV_ED_DATE				DATE				NULL			COMMENT '입주가능종료일자',
+	DEAL_AMT						BIGINT(12)			NOT NULL		COMMENT '거래금액(원)'					DEFAULT 0,
+	DPST_AMT						BIGINT(12)			NOT NULL		COMMENT '보증금액(원)'					DEFAULT 0,
+	MONT_RENT_AMT					INT(7)				NOT NULL		COMMENT '월임대료(원)'					DEFAULT 0,
+	CLIENT_NM						VARCHAR(30)			NULL			COMMENT '의뢰인성명',
+	COMP_NM							VARCHAR(120)		NULL			COMMENT '회사명',
+	SUGGST_SECTR_CD					VARCHAR(30)			NULL			COMMENT '제안요청업종코드',
+	WISH_FLR_TYP_CD					VARCHAR(30)			NULL			COMMENT '희망층수유형코드',
+	INTRR_YN						CHAR(1)				NULL			COMMENT '인테리어여부',
+	REQ_DSCR						VARCHAR(1000)		NULL			COMMENT '요청사항내용',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '매물제안요청';
+
+
+/* ######################################################### */
+/* 	[ TB_PROPERTY_SUGGEST_REGION ] 매물제안요청지역 */
+/* ######################################################### */
+-- DROP TABLE TB_PROPERTY_SUGGEST_REGION;
+SELECT * FROM TB_PROPERTY_SUGGEST_REGION;
+CREATE TABLE TB_PROPERTY_SUGGEST_REGION (
+	PRPT_SUGGST_REQ_SEQNO			BIGINT(12)			NOT NULL		COMMENT '매물제안요청시퀀스'				DEFAULT 0,
+	REGION_NM						VARCHAR(200)		NOT NULL		COMMENT '지역명'
+) COMMENT '매물제안요청지역';
+
+
+/* ######################################################### */
+/* 	[ TB_PUBLIC_NOTIFICATION ] 공지알림 */
+/* ######################################################### */
+-- DROP TABLE TB_PUBLIC_NOTIFICATION;
+SELECT * FROM TB_PUBLIC_NOTIFICATION;
+CREATE TABLE TB_PUBLIC_NOTIFICATION (
+	PUBLIC_NOTI_SEQNO				BIGINT(12)			PRIMARY KEY		COMMENT '공지알림시퀀스'				AUTO_INCREMENT,
+	NOTI_TYP_GB_CD					VARCHAR(30)			NOT NULL		COMMENT '공지알림유형구분코드',
+	SEND_DT							DATE				NULL			COMMENT '알림발송일자',
+	NOTI_DSCR						VARCHAR(2000)		NOT NULL		COMMENT '공지내용',
+	SEND_TREAT_DTTM					DATETIME			NULL			COMMENT '발송처리일시',
+	RCPNT_CNT						INT(5)				NOT NULL		COMMENT '수신자수'						DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	DEL_YN							CHAR(1)				NOT NULL		COMMENT '삭제여부'						DEFAULT 'N'
+) COMMENT '공지알림';
+
+
+/* ######################################################### */
+/* 	[ TB_REQUEST_TOUR ] 투어요청 */
+/* ######################################################### */
+-- DROP TABLE TB_REQUEST_TOUR;
+SELECT * FROM TB_REQUEST_TOUR;
+CREATE TABLE TB_REQUEST_TOUR (
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	PRPT_SEQNO						BIGINT(12)			NOT NULL		COMMENT '매물시퀀스'					DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW()
+) COMMENT '투어요청';
+
+
+/* ######################################################### */
+/* 	[ TB_SNS_USER_REG_INFO ] 휴대폰번호인증 */
+/* ######################################################### */
+-- DROP TABLE TB_SNS_USER_REG_INFO;
+SELECT * FROM TB_SNS_USER_REG_INFO;
+CREATE TABLE TB_SNS_USER_REG_INFO (
+	EMAIL							VARCHAR(50)			PRIMARY KEY		COMMENT '이메일(아이디)',
+	SNS_GB_CD						VARCHAR(30)			NOT NULL		COMMENT 'SNS구분코드',
+	AUTH_CD							VARCHAR(200)		NOT NULL		COMMENT '인증코드(code)',
+	XSS_TOKEN						VARCHAR(100)		NOT NULL		COMMENT 'XSS방지토큰(stat)',
+	SNS_ID							VARCHAR(50)			NULL			COMMENT 'SNS고유아이디',
+	USER_NM							VARCHAR(100)		NULL			COMMENT '회원성명',
+	PRFL_IMG_URL					VARCHAR(200)		NULL			COMMENT '프로필이미지URL',
+	MOB_NO							VARCHAR(50)			NULL			COMMENT '휴대폰번호',
+	GENDER_CD						VARCHAR(30)			NULL			COMMENT '성별',
+	BIRTH_YEAR						CHAR(4)				NULL			COMMENT '출생년도',
+	BIRTH_DAY						CHAR(4)				NULL			COMMENT '생일',
+	AGE_LVL							VARCHAR(30)			NULL			COMMENT '연령대'
+) COMMENT '휴대폰번호인증';
+
+
+/* ######################################################### */
+/* 	[ TB_STANDARD_REGION ] 기본지역코드 */
+/* ######################################################### */
+SELECT * FROM TB_STANDARD_REGION;
+CREATE TABLE TB_STANDARD_REGION (
+	REGION_CD						CHAR(10)			PRIMARY KEY		COMMENT '지역코드',
+	SIDO_CD							CHAR(2)				NOT NULL		COMMENT '시도_코드',
+	SGG_CD							CHAR(3)				NOT NULL		COMMENT '시군구_코드',
+	UMD_CD							CHAR(3)				NOT NULL		COMMENT '읍면동_코드',
+	RI_CD							CHAR(2)				NOT NULL		COMMENT '리_코드',
+	LOCAL_ADDR_NM					VARCHAR(100)		NOT NULL		COMMENT '지역주소명칭',
+	LOCAL_LOW_NM					VARCHAR(50)			NOT NULL		COMMENT '최하위지역명칭',
+	LOCAL_ORDER						INT(3)				NOT NULL		COMMENT '지역서열'						DEFAULT 0,
+	UPD_DATE						DATE				NULL			COMMENT '갱신일자'
+) COMMENT '기본지역코드';
+
+
+/* ######################################################### */
+/* 	[ TB_SUGGESTION_SALES_NOTIFICATION ] 추천분양알림 */
+/* ######################################################### */
+SELECT * FROM TB_SUGGESTION_SALES_NOTIFICATION;
+CREATE TABLE TB_SUGGESTION_SALES_NOTIFICATION (
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW()
+) COMMENT '추천분양알림';
+
+
+/* ######################################################### */
+/* 	[ TB_TEMPDATA_OF_REGISTRATION_STEP ] 등록단계별임시정보 */
+/* ######################################################### */
+-- DROP TABLE TB_TEMPDATA_OF_REGISTRATION_STEP;
+SELECT * FROM TB_TEMPDATA_OF_REGISTRATION_STEP;
+CREATE TABLE TB_TEMPDATA_OF_REGISTRATION_STEP (
+	REG_TMP_SEQNO					BIGINT(12)			PRIMARY KEY		COMMENT '등록임시시퀀스'				AUTO_INCREMENT,
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스'					DEFAULT 0,
+	PRPT_SEQNO						BIGINT(12)			NOT NULL		COMMENT '매물시퀀스'					DEFAULT 0,
+	SUGGSTN_SALES_SEQNO				BIGINT(12)			NOT NULL		COMMENT '추천분양시퀀스'				DEFAULT 0,
+	PRPT_SUGGST_REQ_SEQNO			BIGINT(12)			NOT NULL		COMMENT '매물제안요청시퀀스'				DEFAULT 0,
+	MOV_PRPSL_PRPT_SEQNO			BIGINT(12)			NOT NULL		COMMENT '이전제안매물시퀀스'				DEFAULT 0,
+	ASSET_SEQNO						BIGINT(12)			NOT NULL		COMMENT '자산시퀀스'					DEFAULT 0,
+	REG_CLAS_CD						VARCHAR(30)			NOT NULL		COMMENT '등록종류코드',
+	REG_TMP_KEY						VARCHAR(200)		NOT NULL		COMMENT '등록임시키',
+	REG_STEP						INT(1)				NOT NULL		COMMENT '등록단계',
+	TMP_JSON_DATA					TEXT				NOT NULL		COMMENT '임시JSON데이터',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW()
+) COMMENT '등록단계별임시정보';
+CREATE UNIQUE INDEX IDX_TEMPDATA_OF_REGISTRATION_STEP ON TB_TEMPDATA_OF_REGISTRATION_STEP ( REG_TMP_KEY, REG_STEP );
+
+
+/* ######################################################### */
+/* 	[ TB_TERMS_AGREE ] 약관동의 */
+/* ######################################################### */
+-- DROP TABLE TB_TERMS_AGREE;
+SELECT * FROM TB_TERMS_AGREE;
+CREATE TABLE TB_TERMS_AGREE (
+	MEM_SEQNO						BIGINT(12)			NOT NULL		COMMENT '회원시퀀스',
+	AGE_14_OVR_AGRE_YN				CHAR(1)				NOT NULL		COMMENT '만14세이상동의여부'				DEFAULT 'N',
+	AGE_14_OVR_AGRE_VER				VARCHAR(12)			NULL			COMMENT '만14세이상동의버전',
+	SVC_USE_AGRE_YN					CHAR(1)				NOT NULL		COMMENT '서비스이용동의여부'				DEFAULT 'N',
+	SVC_USE_AGRE_VER				VARCHAR(12)			NULL			COMMENT '서비스이용동의버전',
+	PRSNL_INF_AGRE_YN				CHAR(1)				NOT NULL		COMMENT '개인정보수집및이용동의여부'		DEFAULT 'N',
+	PRSNL_INF_AGRE_VER				VARCHAR(12)			NULL			COMMENT '개인정보수집및이용동의버전',
+	MKT_RCV_AGRE_YN					CHAR(1)				NOT NULL		COMMENT '마케팅정보수신동의여부'			DEFAULT 'N',
+	MKT_RCV_AGRE_VER				VARCHAR(12)			NULL			COMMENT '마케팅정보수신동의버전',
+	REG_DTTM						DATETIME			NULL			COMMENT '등록일시'						DEFAULT NOW(),
+	MOD_DTTM						DATETIME			NULL			COMMENT '수정일시'
+) COMMENT '약관동의';
+CREATE UNIQUE INDEX IDX_TERMS_AGREE ON TB_TERMS_AGREE ( MEM_SEQNO );
+

@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="MapMapper">
+
+	<!-- 지도범위 내 매물 목록조회 -->
+	<select id="getPropertyListOfBounds" parameterType="MapVO" resultType="MapVO">
+		<![CDATA[
+			SELECT
+				T.PRPT_SEQNO,
+				T.PRPT_REG_NO,
+				T.ESTATE_TYP_GB_CD,
+				T.ESTATE_TYP_GB_NM,
+				T.ESTATE_TYP_CD,
+				T.ESTATE_TYP_NM,
+				T.TRAN_TYP_GB_CD,
+				T.TRAN_TYP_GB_NM,
+				T.COST,
+				T.MONT_RENT_AMT,
+				T.SPLY_AREA,
+				T.PRV_AREA,
+				T.LND_AREA,
+				T.TOT_FLR_AREA,
+				T.FLR,
+				T.SMPL_SMR_DSCR,
+				T.LAT,
+				T.LNG,
+				T.ADDR_SHORT_NM,
+				T.REP_IMG_URL,
+				CASE
+					WHEN T.FAV_CNT = 0
+						THEN 'N'
+					ELSE
+						'Y'
+				END AS FAV_YN
+			FROM
+				(
+					SELECT
+						P.PRPT_SEQNO,
+						P.PRPT_REG_NO,
+						P.ESTATE_TYP_GB_CD,
+						C1.ITEM_CD_NM AS ESTATE_TYP_GB_NM,
+						P.ESTATE_TYP_CD,
+						C2.ITEM_CD_NM AS ESTATE_TYP_NM,
+						P.TRAN_TYP_GB_CD,
+						C3.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+						/* 거래유형이 매매, 전세, 전매인 경우 거래금액, 이외에는 보증금액 */
+						CASE
+							WHEN P.TRAN_TYP_GB_CD IN ( 'TRADE', 'CHARTER', 'RESALE' )
+								THEN P.DEAL_AMT
+							ELSE
+								P.DPST_AMT
+						END AS COST,
+						P.MONT_RENT_AMT,
+						P.SPLY_AREA,
+						P.PRV_AREA,
+						P.LND_AREA,
+						P.TOT_FLR_AREA,
+						/* 매물유형이 토지/임야, 단독공장인 경우 대지면적, 이외에는 공급면적으로 SORTING */
+						CASE
+							WHEN P.ESTATE_TYP_CD IN ( 'LND', 'FTR' )
+								THEN P.LND_AREA
+							ELSE
+								P.SPLY_AREA
+						END AS SORT_AREA,
+						P.FLR,
+						COALESCE( PI.SMPL_SMR_DSCR, '' ) AS SMPL_SMR_DSCR,
+						P.LAT,
+						P.LNG,
+						P.ADDR_SHORT_NM,
+						COALESCE(
+									(
+										SELECT
+											FILE_URL
+										FROM
+											TB_PROPERTY_PHOTOS
+										WHERE
+											PRPT_SEQNO = P.PRPT_SEQNO
+											AND DEL_YN = 'N'
+											AND REP_PHOTO_YN = 'Y'
+									), ''
+						) AS REP_IMG_URL,
+						(
+							SELECT
+								COUNT(1)
+							FROM
+								TB_FAVORITE_PROPERTY
+							WHERE
+								PRPT_SEQNO = P.PRPT_SEQNO
+								AND MEM_SEQNO = #{memSeqno}
+						) AS FAV_CNT,
+						P.REG_DTTM
+					FROM
+						TB_PROPERTY P
+							LEFT OUTER JOIN TB_PROPERTY_PHOTO_INFO PI
+								ON P.PRPT_SEQNO = PI.PRPT_SEQNO
+							INNER JOIN TB_COMN_CD C1
+								ON C1.COMN_CD = 'ESTATE_TYP_GB_CD'
+								AND P.ESTATE_TYP_GB_CD = C1.ITEM_CD
+							INNER JOIN TB_COMN_CD C2
+								ON C2.COMN_CD = 'ESTATE_TYP_CD'
+								AND P.ESTATE_TYP_CD = C2.ITEM_CD
+							INNER JOIN TB_COMN_CD C3
+								ON C3.COMN_CD = 'TRAN_TYP_GB_CD'
+								AND P.TRAN_TYP_GB_CD = C3.ITEM_CD
+					WHERE
+						P.DEL_YN = 'N'
+						AND P.ADMIN_CNFRM_YN = 'Y'
+						AND P.ESTATE_TYP_GB_CD = #{estateTypGbCd}
+						AND P.ESTATE_TYP_CD = #{estateTypCd}
+						AND P.DEAL_STAT_GB_CD = 'ING'											/* 진행중 매물만 */
+						AND P.LAT BETWEEN #{swLat} AND #{neLat}
+						AND P.LNG BETWEEN #{swLng} AND #{neLng}
+						AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )		/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+				
+		]]>
+			<if test='tranTypGbYn == "Y"'>
+						AND P.TRAN_TYP_GB_CD IN (
+				<foreach collection="tranTypGbCdList" item="tranTypGbCd" separator=",">
+								#{tranTypGbCd}
+				</foreach>
+						)
+			</if>
+			<if test='dealAmtYn == "Y"'>
+						AND (
+								P.DEAL_AMT BETWEEN #{dealMinAmt} AND #{dealMaxAmt}
+						)
+			</if>
+			<if test='dpstAmtYn == "Y"'>
+						AND (
+								P.DPST_AMT BETWEEN #{dpstMinAmt} AND #{dpstMaxAmt}
+						)
+			</if>
+			<if test='monRentAmtYn == "Y"'>
+						AND (
+								P.MONT_RENT_AMT BETWEEN #{monRentMinAmt} AND #{monRentMaxAmt}
+						)
+			</if>
+			<if test='splyAreaYn == "Y"'>
+						AND (
+								P.SPLY_AREA BETWEEN #{minSplyArea} AND #{maxSplyArea}
+						)
+			</if>
+			<if test='prvAreaYn == "Y"'>
+						AND (
+								P.PRV_AREA BETWEEN #{minPrvArea} AND #{maxPrvArea}
+						)
+			</if>
+			<if test='lndAreaYn == "Y"'>
+						AND (
+								P.LND_AREA BETWEEN #{minLndArea} AND #{maxLndArea}
+						)
+			</if>
+			<if test='totFlrAreaYn == "Y"'>
+						AND (
+								P.TOT_FLR_AREA BETWEEN #{minTotFlrArea} AND #{maxTotFlrArea}
+						)
+			</if>
+			<if test='monMntnceCostYn == "Y"'>
+						AND (
+								P.MON_MNTNCE_COST BETWEEN #{monMntnceMinCost} AND #{monMntnceMaxCost}
+						)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(useCnfrmYearSrchTypCd)">
+				<choose>
+					<when test="useCnfrmYearSrchTypCd == 'IN_1Y'">
+						AND P.USE_CNFRM_DATE >= DATE_SUB( NOW(), INTERVAL 1 YEAR )
+					</when>
+					<when test="useCnfrmYearSrchTypCd == 'IN_2Y'">
+						AND P.USE_CNFRM_DATE >= DATE_SUB( NOW(), INTERVAL 2 YEAR )
+					</when>
+					<when test="useCnfrmYearSrchTypCd == 'IN_5Y'">
+						AND P.USE_CNFRM_DATE >= DATE_SUB( NOW(), INTERVAL 5 YEAR )
+					</when>
+					<when test="useCnfrmYearSrchTypCd == 'IN_10Y'">
+						AND P.USE_CNFRM_DATE >= DATE_SUB( NOW(), INTERVAL 10 YEAR )
+					</when>
+					<when test="useCnfrmYearSrchTypCd == 'IN_15Y'">
+						AND P.USE_CNFRM_DATE >= DATE_SUB( NOW(), INTERVAL 15 YEAR )
+					</when>
+					<when test="useCnfrmYearSrchTypCd == 'OV_15Y'">
+		<![CDATA[
+						AND P.USE_CNFRM_DATE < DATE_SUB( NOW(), INTERVAL 15 YEAR )
+		]]>
+					</when>
+				</choose>
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(loanGbCd)">
+						AND P.LOAN_GB_CD = #{loanGbCd}
+			</if>
+			<if test='prmmAmtYn == "Y"'>
+						AND (
+								P.PRMM_AMT BETWEEN #{minPrmmAmt} AND #{maxPrmmAmt}
+						)
+			</if>
+			<if test='sectrGbYn == "Y"'>
+						AND (
+								P.CRNT_SECTR_GB_CD IN (
+				<foreach collection="sectrGbCdList" item="sectrGbCd" separator=",">
+									#{sectrGbCd}
+				</foreach>
+								)
+								AND
+								P.SUGGSTN_SECTR_GB_CD IN (
+				<foreach collection="sectrGbCdList" item="sectrGbCd" separator=",">
+									#{sectrGbCd}
+				</foreach>
+								)
+						)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(flrHghtTypGbCd)">
+						AND P.FLR_HGHT_TYP_GB_CD = #{flrHghtTypGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(elctrPwrTypGbCd)">
+						AND P.ELCTR_PWR_TYP_GB_CD = #{elctrPwrTypGbCd}
+			</if>
+		<![CDATA[
+				) T
+		]]>
+			<choose>
+				<when test="sortItem == 'DATE'">
+					<choose>
+						<when test="sortTyp == 'ASC'">
+			ORDER BY
+				T.REG_DTTM
+						</when>
+						<when test="sortTyp == 'DESC'">
+			ORDER BY
+				T.REG_DTTM DESC
+						</when>
+					</choose>
+				</when>
+				<when test="sortItem == 'COST'">
+					<choose>
+						<when test="sortTyp == 'ASC'">
+			ORDER BY
+				T.COST
+						</when>
+						<when test="sortTyp == 'DESC'">
+			ORDER BY
+				T.COST DESC
+						</when>
+					</choose>
+				</when>
+				<when test="sortItem == 'AREA'">
+					<choose>
+						<when test="sortTyp == 'ASC'">
+			ORDER BY
+				T.SORT_AREA
+						</when>
+						<when test="sortTyp == 'DESC'">
+			ORDER BY
+				T.SORT_AREA DESC
+						</when>
+					</choose>
+				</when>
+			</choose>
+	</select>
+	
+	<!-- 지도범위 내 지식산업센터 목록조회 -->
+	<select id="getKnowledgeIndustryComplexListOfBounds" parameterType="MapVO" resultType="MapVO">
+		<![CDATA[
+			SELECT
+				KNWLDG_IND_CMPLX_SEQNO,
+				BLD_NM,
+				ADDR,
+				LAT,
+				LNG,
+				ASK_SALES_MIN_PRC,
+				ASK_SALES_AVG_PRC,
+				ASK_SALES_MAX_PRC,
+				ASK_LEASE_MIN_PRC,
+				ASK_LEASE_AVG_PRC,
+				ASK_LEASE_MAX_PRC
+			FROM
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX
+			WHERE
+				DEL_YN = 'N'
+				AND LAT BETWEEN #{swLat} AND #{neLat}
+				AND LNG BETWEEN #{swLng} AND #{neLng}
+		]]>
+	</select>
+	
+	<!-- 지도범위 내 중개사 목록조회 -->
+	<select id="getEstateBrokerOfficeListOfBounds" parameterType="MapVO" resultType="MapVO">
+		<![CDATA[
+			SELECT
+				EB.EST_BRK_MEM_OFC_SEQNO,
+				EB.OFC_NM,
+				EB.LAT,
+				EB.LNG,
+				EB.ADDR,
+				EB.ADDR_SHORT_NM,
+				M.PRFL_IMG_URL
+			FROM
+				TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EB
+					INNER JOIN TB_MEMBER M
+						ON EB.MEM_SEQNO = M.MEM_SEQNO
+			WHERE
+				EB.LAT BETWEEN #{swLat} AND #{neLat}
+				AND EB.LNG BETWEEN #{swLng} AND #{neLng}
+				AND M.DEL_YN = 'N'
+				AND M.ACTV_STAT_GB_CD != 'WDR'
+				AND M.ACNT_APRV_STAT_CD = 'Y'
+		]]>
+	</select>
+</mapper>

@@ -1,0 +1,867 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AssetMapper">
+
+	<!-- 자산 기본정보 조회 -->
+	<select id="getAssetVO" parameterType="AssetVO" resultType="AssetVO">
+		<![CDATA[
+			SELECT
+				ESTATE_TYP_GB_CD,
+				ESTATE_TYP_CD,
+				TRAN_TYP_GB_CD
+			FROM
+				TB_ASSET
+			WHERE
+				ASSET_SEQNO = #{assetSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 자산 임시 1단계 정보 조회 -->
+	<select id="getRegTmpKeyOfAssetStep1" parameterType="AssetVO" resultType="String">
+		<![CDATA[
+			SELECT
+				TMP_JSON_DATA
+			FROM
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND ASSET_SEQNO = #{assetSeqno}
+				AND REG_STEP = 1
+		]]>
+	</select>
+	
+	<!-- 자산 1단계정보 업데이트 -->
+	<update id="updateAssetStep1Data" parameterType="AssetVO">
+		<![CDATA[
+			UPDATE
+				TB_ASSET
+			SET
+				ESTATE_TYP_GB_CD = #{estateTypGbCd},
+				ESTATE_TYP_CD = #{estateTypCd},
+				ADDR = #{addr},
+				ROAD_ADDR = #{roadAddr},
+				DTL_ADDR = #{dtlAddr},
+				TMP_ADDR_YN = #{tmpAddrYn},
+				LAT = #{lat},
+				LNG = #{lng},
+				SPLY_AREA = #{splyArea},
+				PRV_AREA = #{prvArea},
+				INSP_GB_CD = #{inspGbCd},
+				BIZMAN_GB_CD = #{bizmanGbCd},
+				UNREGIST_YN = #{unregistYn}
+			WHERE
+				ASSET_SEQNO = #{assetSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 자산 1단계 수정용 정보 조회 -->
+	<select id="getAssetStep1Data" parameterType="AssetVO" resultType="AssetVO">
+		<![CDATA[
+			SELECT
+				ESTATE_TYP_GB_CD,
+				ESTATE_TYP_CD,
+				ADDR,
+				ROAD_ADDR,
+				DTL_ADDR,
+				TMP_ADDR_YN,
+				LAT,
+				LNG,
+				SPLY_AREA,
+				PRV_AREA,
+				LND_AREA,
+				TOT_FLR_AREA,
+				INSP_GB_CD,
+				BIZMAN_GB_CD,
+				UNREGIST_YN
+			FROM
+				TB_ASSET
+			WHERE
+				ASSET_SEQNO = #{assetSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 기존 자산 주소 중복 확인 -->
+	<select id="getDuplicatedAssetAddressCnt" parameterType="AssetVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_ASSET
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+				AND ADDR = #{addr}
+		]]>
+	</select>
+	
+	<!-- 자산 2단계정보 업데이트 -->
+	<update id="updateAssetStep2Data" parameterType="AssetVO">
+		<![CDATA[
+			UPDATE
+				TB_ASSET
+			SET
+				TRAN_TYP_GB_CD = #{tranTypGbCd},
+				DEAL_AMT = #{dealAmt},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(contDate)">
+				CONT_DATE = STR_TO_DATE( #{contDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+				CONT_DATE = NULL,
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(registDate)">
+				REGIST_DATE = STR_TO_DATE( #{registDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+				REGIST_DATE = NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+				ACQSTN_TAX_RATIO = #{acqstnTaxRatio},
+				ETC_COST = #{etcCost},
+				TAXOFC_COST = #{taxofcCost},
+				EST_FEE_AMT = #{estFeeAmt},
+				LOAN_AMT = #{loanAmt},
+				LOAN_INTR_RATIO = #{loanIntrRatio},
+				LOAN_MON_TERM = #{loanMonTerm},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(loanDate)">
+				LOAN_DATE = STR_TO_DATE( #{loanDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+				LOAN_DATE = NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+				LOAN_MTHD_GB_CD = #{loanMthdGbCd}
+			WHERE
+				ASSET_SEQNO = #{assetSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 자산 2단계 수정용 정보 조회 -->
+	<select id="getAssetStep2Data" parameterType="AssetVO" resultType="AssetVO">
+		<![CDATA[
+			SELECT
+				TRAN_TYP_GB_CD,
+				DEAL_AMT,
+				COALESCE( DATE_FORMAT( CONT_DATE, '%Y.%m.%d' ), '' ) AS CONT_DATE,
+				COALESCE( DATE_FORMAT( REGIST_DATE, '%Y.%m.%d' ), '' ) AS REGIST_DATE,
+				ACQSTN_TAX_RATIO,
+				ETC_COST,
+				TAXOFC_COST,
+				EST_FEE_AMT,
+				LOAN_AMT,
+				LOAN_INTR_RATIO,
+				LOAN_MON_TERM,
+				COALESCE( DATE_FORMAT( LOAN_DATE, '%Y.%m.%d' ), '' ) AS LOAN_DATE
+			FROM
+				TB_ASSET
+			WHERE
+				ASSET_SEQNO = #{assetSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 자산 3단계정보 업데이트 -->
+	<update id="updateAssetStep3Data" parameterType="AssetVO">
+		<![CDATA[
+			UPDATE
+				TB_ASSET
+			SET
+				EMPTY_TYP_GB_CD = #{emptyTypGbCd},
+				LESEE_NM = #{leseeNm},
+				LESEE_TEL_NO = #{leseeTelNo},
+				RENT_AMT_PAY_MTHD_GB_CD = #{rentAmtPayMthdGbCd},
+				DPST_AMT = #{dpstAmt},
+				MONT_RENT_AMT = #{montRentAmt},
+				MONTHLY_PAY_DAY_GB_CD = #{monthlyPayDayGbCd},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(rentContStDate)">
+				RENT_CONT_ST_DATE = STR_TO_DATE( #{rentContStDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+				RENT_CONT_ST_DATE = NULL,
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(rentContEdDate)">
+				RENT_CONT_ED_DATE = STR_TO_DATE( #{rentContEdDate}, '%Y%m%d' )
+				</when>
+				<otherwise>
+				RENT_CONT_ED_DATE = NULL
+				</otherwise>
+			</choose>
+		<![CDATA[
+			WHERE
+				ASSET_SEQNO = #{assetSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 자산 3단계 수정용 정보 조회 -->
+	<select id="getAssetStep3Data" parameterType="AssetVO" resultType="AssetVO">
+		<![CDATA[
+			SELECT
+				EMPTY_TYP_GB_CD,
+				LESEE_NM,
+				LESEE_TEL_NO,
+				RENT_AMT_PAY_MTHD_GB_CD,
+				DPST_AMT,
+				MONT_RENT_AMT,
+				MONTHLY_PAY_DAY_GB_CD,
+				COALESCE( DATE_FORMAT( RENT_CONT_ST_DATE, '%Y.%m.%d' ), '' ) AS RENT_CONT_ST_DATE,
+				COALESCE( DATE_FORMAT( RENT_CONT_ED_DATE, '%Y.%m.%d' ), '' ) AS RENT_CONT_ED_DATE
+			FROM
+				TB_ASSET
+			WHERE
+				ASSET_SEQNO = #{assetSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 자산 등록 -->
+	<insert id="registerAsset" parameterType="AssetVO">
+		<![CDATA[
+			INSERT INTO TB_ASSET
+				(
+					MEM_SEQNO,
+					ESTATE_TYP_GB_CD,
+					ESTATE_TYP_CD,
+					TRAN_TYP_GB_CD,
+					ADDR,
+					ROAD_ADDR,
+					DTL_ADDR,
+					TMP_ADDR_YN,
+					LAT,
+					LNG,
+					SPLY_AREA,
+					PRV_AREA,
+					LND_AREA,
+					TOT_FLR_AREA,
+					INSP_GB_CD,
+					BIZMAN_GB_CD,
+					UNREGIST_YN,
+					DEAL_AMT,
+					CONT_DATE,
+					REGIST_DATE,
+					ACQSTN_TAX_RATIO,
+					ETC_COST,
+					TAXOFC_COST,
+					EST_FEE_AMT,
+					LOAN_AMT,
+					LOAN_INTR_RATIO,
+					LOAN_MON_TERM,
+					LOAN_DATE,
+					LOAN_MTHD_GB_CD,
+					EMPTY_TYP_GB_CD,
+					LESEE_NM,
+					LESEE_TEL_NO,
+					RENT_AMT_PAY_MTHD_GB_CD,
+					DPST_AMT,
+					MONT_RENT_AMT,
+					MONTHLY_PAY_DAY_GB_CD,
+					RENT_CONT_ST_DATE,
+					RENT_CONT_ED_DATE
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{estateTypGbCd},
+					#{estateTypCd},
+					#{tranTypGbCd},
+					#{addr},
+					#{roadAddr},
+					#{dtlAddr},
+					#{tmpAddrYn},
+					#{lat},
+					#{lng},
+					#{splyArea},
+					#{prvArea},
+					#{lndArea},
+					#{totFlrArea},
+					#{inspGbCd},
+					#{bizmanGbCd},
+					#{unregistYn},
+					#{dealAmt},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(contDate)">
+					STR_TO_DATE( #{contDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(registDate)">
+					STR_TO_DATE( #{registDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+					#{acqstnTaxRatio},
+					#{etcCost},
+					#{taxofcCost},
+					#{estFeeAmt},
+					#{loanAmt},
+					#{loanIntrRatio},
+					#{loanMonTerm},
+					#{loanDate},
+					#{loanMthdGbCd},
+					#{emptyTypGbCd},
+					#{leseeNm},
+					#{leseeTelNo},
+					#{rentAmtPayMthdGbCd},
+					#{dpstAmt},
+					#{montRentAmt},
+					#{monthlyPayDayGbCd},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(rentContStDate)">
+					STR_TO_DATE( #{rentContStDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(rentContEdDate)">
+					STR_TO_DATE( #{rentContEdDate}, '%Y%m%d' )
+				</when>
+				<otherwise>
+					NULL
+				</otherwise>
+			</choose>
+		<![CDATA[
+				)
+		]]>
+		<selectKey keyProperty="assetSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( ASSET_SEQNO ) AS ASSET_SEQNO
+			FROM
+				TB_ASSET
+		</selectKey>
+	</insert>
+	
+	<!-- 자산 첨부파일 삭제처리 -->
+	<update id="deleteAssetAtchDocItem" parameterType="AssetVO">
+		<![CDATA[
+			UPDATE
+				TB_ASSET_ATTACH_DOC
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				ASSET_SEQNO = #{assetSeqno}
+				AND ASSET_ATT_DOC_GB_CD = #{assetAttDocGbCd}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 자산 첨부파일 등록 -->
+	<insert id="registerAssetAtchDocItem" parameterType="AssetVO">
+		<![CDATA[
+			INSERT INTO TB_ASSET_ATTACH_DOC
+				(
+					ASSET_SEQNO,
+					ASSET_ATT_DOC_GB_CD,
+					UPLOAD_FILE_NM,
+					SAVE_FILE_NM,
+					FILE_URL
+				)
+			VALUES
+				(
+					#{assetSeqno},
+					#{assetAttDocGbCd},
+					#{uploadFileNm},
+					#{saveFileNm},
+					#{fileUrl}
+				)
+		]]>
+	</insert>
+	
+	<!-- 자산 최종단계 수정용 정보 조회 -->
+	<select id="getAssetFinalStepData" parameterType="AssetVO" resultType="AssetVO">
+		<![CDATA[
+			SELECT
+				COALESCE(
+							(
+								SELECT
+									FILE_URL
+								FROM
+									TB_ASSET_ATTACH_DOC
+								WHERE
+									ASSET_SEQNO = A.ASSET_SEQNO
+									AND ASSET_ATT_DOC_GB_CD = 'SC'
+									AND DEL_YN = 'N'
+							),
+							''
+				) AS SC_FILE_URL,
+				COALESCE(
+							(
+								SELECT
+									FILE_URL
+								FROM
+									TB_ASSET_ATTACH_DOC
+								WHERE
+									ASSET_SEQNO = A.ASSET_SEQNO
+									AND ASSET_ATT_DOC_GB_CD = 'BR'
+									AND DEL_YN = 'N'
+							),
+							''
+				) AS BR_FILE_URL,
+				COALESCE(
+							(
+								SELECT
+									FILE_URL
+								FROM
+									TB_ASSET_ATTACH_DOC
+								WHERE
+									ASSET_SEQNO = A.ASSET_SEQNO
+									AND ASSET_ATT_DOC_GB_CD = 'RC'
+									AND DEL_YN = 'N'
+							),
+							''
+				) AS RC_FILE_URL,
+				COALESCE(
+							(
+								SELECT
+									FILE_URL
+								FROM
+									TB_ASSET_ATTACH_DOC
+								WHERE
+									ASSET_SEQNO = A.ASSET_SEQNO
+									AND ASSET_ATT_DOC_GB_CD = 'ET'
+									AND DEL_YN = 'N'
+							),
+							''
+				) AS ET_FILE_URL
+			FROM
+				TB_ASSET A
+			WHERE
+				A.MEM_SEQNO = #{memSeqno}
+				AND A.ASSET_SEQNO = #{assetSeqno}
+				AND A.DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 자산 수익정보 필드 업데이트 -->
+	<update id="updateAssetProfitInfo" parameterType="AssetVO">
+		<![CDATA[
+			UPDATE
+				TB_ASSET
+			SET
+				REAL_INVEST_AMT = #{realInvestAmt},
+				LOAN_INTR_AMT = #{loanIntrAmt},
+				ACQSTN_TAX_AMT = #{acqstnTaxAmt},
+				TOT_COST = #{totCost},
+				RTN_RATIO = #{rtnRatio},
+				MON_PROFIT_AMT = #{monProfitAmt},
+				PY_UNIT_AMT = #{pyUnitAmt},
+				MK_PROFIT_AMT = #{mkProfitAmt},
+				TRNSF_TAX_AMT = #{trnsfTaxAmt}
+			WHERE
+				ASSET_SEQNO = #{assetSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 일반회원 자산 요약정보 조회 -->
+	<select id="getAssetSummaryItem" parameterType="Long" resultType="AssetVO">
+		<![CDATA[
+			SELECT
+				COALESCE( SUM( DEAL_AMT ), 0 ) AS DEAL_AMT,
+				COALESCE( SUM( REAL_INVEST_AMT ), 0 ) AS REAL_INVEST_AMT,
+				COALESCE( SUM( MON_PROFIT_AMT ), 0 ) AS MON_PROFIT_AMT,
+				COALESCE( ROUND( AVG( RTN_RATIO ), 2 ), 0.0 ) AS RTN_RATIO,
+				COALESCE( SUM( DPST_AMT ), 0 ) AS DPST_AMT,
+				COALESCE( SUM( MONT_RENT_AMT ), 0 ) AS MONT_RENT_AMT,
+				COALESCE( SUM( LOAN_AMT ), 0 ) AS LOAN_AMT,
+				COALESCE( SUM( LOAN_INTR_AMT), 0 ) AS LOAN_INTR_AMT,
+				COALESCE( SUM( ACQSTN_TAX_AMT), 0 ) AS ACQSTN_TAX_AMT,
+				COALESCE( SUM( TOT_COST), 0 ) AS TOT_COST
+			FROM
+				TB_ASSET
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 내 자산 지번주소 그룹핑 목록조회 -->
+	<select id="getAssetAddressGroupList" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				ADDR
+			FROM
+				TB_ASSET
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+			GROUP BY
+				ADDR
+			ORDER BY
+				ADDR
+		]]>
+	</select>
+	
+	<!-- 내 자산 목록조회 -->
+	<select id="getMyAssetListOfAddr" parameterType="AssetVO" resultType="AssetVO">
+		<![CDATA[
+			SELECT
+				A.ASSET_SEQNO,
+				A.DTL_ADDR,
+				A.ESTATE_TYP_CD,
+				C.ITEM_CD_NM AS ESTATE_TYP_NM,
+				A.SPLY_AREA,
+				A.PRV_AREA,
+				A.LND_AREA,
+				A.TOT_FLR_AREA,
+				A.DPST_AMT,
+				A.MONT_RENT_AMT,
+				A.MON_PROFIT_AMT,
+				A.RTN_RATIO
+			FROM
+				TB_ASSET A
+					INNER JOIN TB_COMN_CD C
+						ON C.COMN_CD = 'ESTATE_TYP_CD'
+						AND A.ESTATE_TYP_CD = C.ITEM_CD
+			WHERE
+				A.MEM_SEQNO = #{memSeqno}
+				AND A.ADDR = #{addr}
+				AND A.DEL_YN = 'N'
+			ORDER BY
+				A.DTL_ADDR
+		]]>
+	</select>
+	
+	<!-- 자산 개별삭제 -->
+	<update id="deleteAsset" parameterType="AssetVO">
+		<![CDATA[
+			UPDATE
+				TB_ASSET
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND ASSET_SEQNO = #{assetSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 자산 일괄삭제 -->
+	<update id="deleteAssetByAddr" parameterType="AssetVO">
+		<![CDATA[
+			UPDATE
+				TB_ASSET
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND ADDR = #{addr}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 자산 상세정보 조회 -->
+	<select id="getAssetDtlItem" parameterType="AssetVO" resultType="AssetVO">
+		<![CDATA[
+			SELECT
+				A.DEAL_AMT,
+				A.REAL_INVEST_AMT,
+				A.MON_PROFIT_AMT,
+				A.RTN_RATIO,
+				A.DPST_AMT,
+				A.MONT_RENT_AMT,
+				A.LOAN_AMT,
+				A.LOAN_INTR_RATIO,
+				A.LOAN_INTR_AMT,
+				A.ACQSTN_TAX_AMT,
+				A.TOT_COST,
+				A.PY_UNIT_AMT,
+				A.MK_PROFIT_AMT,
+				A.TRNSF_TAX_AMT,
+				A.ADDR,
+				A.ROAD_ADDR,
+				A.DTL_ADDR,
+				C1.ITEM_CD_NM AS ESTATE_TYP_NM,
+				C2.ITEM_CD_NM AS INSP_GB_NM,
+				C3.ITEM_CD_NM AS BIZMAN_GB_NM,
+				A.SPLY_AREA,
+				A.PRV_AREA,
+				DATE_FORMAT( A.CONT_DATE, '%Y.%m.%d' ) AS CONT_DATE,
+				A.LOAN_AMT,
+				A.LOAN_MON_TERM,
+				COALESCE( DATE_FORMAT( A.LOAN_DATE, '%Y.%m.%d' ), '' ) AS LOAN_DATE,
+				C4.ITEM_CD_NM AS LOAN_MTHD_GB_NM,
+				A.LOAN_INTR_RATIO,
+				A.LOAN_INTR_AMT,
+				C5.ITEM_CD_NM AS EMPTY_TYP_GB_NM,
+				COALESCE( DATE_FORMAT( A.RENT_CONT_ST_DATE, '%Y.%m.%d' ), '' ) AS RENT_CONT_ST_DATE,
+				COALESCE( DATE_FORMAT( A.RENT_CONT_ED_DATE, '%Y.%m.%d' ), '' ) AS RENT_CONT_ED_DATE,
+				A.LESEE_NM,
+				A.LESEE_TEL_NO,
+				C6.ITEM_CD_NM AS RENT_AMT_PAY_MTHD_GB_NM,
+				C7.ITEM_CD_NM AS MONTHLY_PAY_DAY_GB_NM,
+				COALESCE(
+							(
+								SELECT
+									FILE_URL
+								FROM
+									TB_ASSET_ATTACH_DOC
+								WHERE
+									ASSET_SEQNO = A.ASSET_SEQNO
+									AND ASSET_ATT_DOC_GB_CD = 'SC'
+									AND DEL_YN = 'N'
+							),
+							''
+				) AS SC_FILE_URL,
+				COALESCE(
+							(
+								SELECT
+									FILE_URL
+								FROM
+									TB_ASSET_ATTACH_DOC
+								WHERE
+									ASSET_SEQNO = A.ASSET_SEQNO
+									AND ASSET_ATT_DOC_GB_CD = 'BR'
+									AND DEL_YN = 'N'
+							),
+							''
+				) AS BR_FILE_URL,
+				COALESCE(
+							(
+								SELECT
+									FILE_URL
+								FROM
+									TB_ASSET_ATTACH_DOC
+								WHERE
+									ASSET_SEQNO = A.ASSET_SEQNO
+									AND ASSET_ATT_DOC_GB_CD = 'RC'
+									AND DEL_YN = 'N'
+							),
+							''
+				) AS RC_FILE_URL,
+				COALESCE(
+							(
+								SELECT
+									FILE_URL
+								FROM
+									TB_ASSET_ATTACH_DOC
+								WHERE
+									ASSET_SEQNO = A.ASSET_SEQNO
+									AND ASSET_ATT_DOC_GB_CD = 'ET'
+									AND DEL_YN = 'N'
+							),
+							''
+				) AS ET_FILE_URL
+			FROM
+				TB_ASSET A
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'ESTATE_TYP_CD'
+						AND A.ESTATE_TYP_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'INSP_GB_CD'
+						AND A.INSP_GB_CD = C2.ITEM_CD
+					INNER JOIN TB_COMN_CD C3
+						ON C3.COMN_CD = 'BIZMAN_GB_CD'
+						AND A.BIZMAN_GB_CD = C3.ITEM_CD
+					INNER JOIN TB_COMN_CD C4
+						ON C4.COMN_CD = 'LOAN_MTHD_GB_CD'
+						AND A.LOAN_MTHD_GB_CD = C4.ITEM_CD
+					INNER JOIN TB_COMN_CD C5
+						ON C5.COMN_CD = 'EMPTY_TYP_GB_CD'
+						AND A.EMPTY_TYP_GB_CD = C5.ITEM_CD
+					INNER JOIN TB_COMN_CD C6
+						ON C6.COMN_CD = 'RENT_AMT_PAY_MTHD_GB_CD'
+						AND A.RENT_AMT_PAY_MTHD_GB_CD = C6.ITEM_CD
+					INNER JOIN TB_COMN_CD C7
+						ON C7.COMN_CD = 'MONTHLY_PAY_DAY_GB_CD'
+						AND A.MONTHLY_PAY_DAY_GB_CD = C7.ITEM_CD
+			WHERE
+				A.MEM_SEQNO = #{memSeqno}
+				AND A.ASSET_SEQNO = #{assetSeqno}
+				AND A.DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- Admin - 일반회원 자산 목록조회 ( 페이징 ) -->
+	<select id="getMemAssetItems" parameterType="AssetVO" resultType="AssetVO">
+		<![CDATA[
+			SELECT
+				L.ROWNUM,
+				L.MEM_SEQNO,
+				M.EMAIL,
+				M.MEM_NAME,
+				M.MOB_NO,
+				L.ASSET_CNT,
+				L.DEAL_AMT,
+				DATE_FORMAT( L.REG_DTTM, '%Y.%m.%d' ) AS RECENT_DT,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						(
+							SELECT
+								A.MEM_SEQNO,
+								COUNT(1) AS ASSET_CNT,
+								SUM( A.DEAL_AMT ) AS DEAL_AMT,
+								MAX( A.REG_DTTM ) AS REG_DTTM
+							FROM
+								TB_ASSET A
+									INNER JOIN (
+													SELECT
+														MEM_SEQNO
+													FROM
+														TB_MEMBER
+													WHERE
+														DEL_YN = 'N'
+														AND MEM_TYP_CD = 'N'						/* 일반회원만 */
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+		<![CDATA[
+														AND (
+																EMAIL LIKE CONCAT( '%', #{srchVal}, '%' )
+																OR
+																MEM_NAME LIKE CONCAT( '%', #{srchVal}, '%' )
+														)
+		]]>
+			</if>
+		<![CDATA[
+									) M
+										ON A.MEM_SEQNO = M.MEM_SEQNO
+							WHERE
+								A.DEL_YN = 'N'
+							GROUP BY
+								A.MEM_SEQNO
+						) G
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@NUM := @NUM + 1 AS RNUM,
+						T.ROWNUM,
+						T.MEM_SEQNO,
+						T.ASSET_CNT,
+						T.DEAL_AMT,
+						T.REG_DTTM
+					FROM
+						(
+							SELECT
+								@NUM := 0 AS RNUM,
+								@RNUM := @RNUM + 1 AS ROWNUM,
+								F.MEM_SEQNO,
+								F.ASSET_CNT,
+								F.DEAL_AMT,
+								F.REG_DTTM
+							FROM
+								(
+									SELECT
+										@RNUM := 0 AS ROWNUM,
+										G.MEM_SEQNO,
+										G.ASSET_CNT,
+										G.DEAL_AMT,
+										G.REG_DTTM
+									FROM
+										(
+											SELECT
+												A.MEM_SEQNO,
+												COUNT(1) AS ASSET_CNT,
+												SUM( A.DEAL_AMT ) AS DEAL_AMT,
+												MAX( A.REG_DTTM ) AS REG_DTTM
+											FROM
+												TB_ASSET A
+													INNER JOIN (
+																	SELECT
+																		MEM_SEQNO
+																	FROM
+																		TB_MEMBER
+																	WHERE
+																		DEL_YN = 'N'
+																		AND MEM_TYP_CD = 'N'						/* 일반회원만 */
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+		<![CDATA[
+																		AND (
+																				EMAIL LIKE CONCAT( '%', #{srchVal}, '%' )
+																				OR
+																				MEM_NAME LIKE CONCAT( '%', #{srchVal}, '%' )
+																		)
+		]]>
+			</if>
+		<![CDATA[
+													) M
+														ON A.MEM_SEQNO = M.MEM_SEQNO
+											WHERE
+												A.DEL_YN = 'N'
+											GROUP BY
+												A.MEM_SEQNO
+										) G
+									ORDER BY
+										G.REG_DTTM DESC
+									LIMIT #{edRnum}
+								) F
+							ORDER BY
+								F.REG_DTTM
+						) T
+					ORDER BY
+						T.REG_DTTM DESC
+				) L
+					INNER JOIN TB_MEMBER M
+						ON L.MEM_SEQNO = M.MEM_SEQNO
+			WHERE
+				L.RNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.RNUM
+		]]>
+	</select>
+	
+	<!-- 자산 일반회원 상세정보 조회 -->
+	<select id="getAssetMemDtlItem" parameterType="Long" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				COALESCE( M.PRFL_IMG_URL, '' ) AS PRFL_IMG_URL,
+				M.MEM_NAME,
+				M.EMAIL,
+				M.MOB_NO,
+				DATE_FORMAT( M.REG_DTTM, '%Y.%m.%d' ) AS JOIN_DT,
+				(
+					SELECT SUM( DEAL_AMT) FROM TB_ASSET WHERE MEM_SEQNO = M.MEM_SEQNO AND DEL_YN = 'N'
+				) AS TOT_ASSET_AMT,
+				(
+					SELECT COUNT(1) FROM TB_ASSET WHERE MEM_SEQNO = M.MEM_SEQNO AND DEL_YN = 'N'
+				) AS ASSET_CNT,
+				(
+					SELECT DATE_FORMAT( MAX( REG_DTTM ), '%Y.%m.%d' ) FROM TB_ASSET WHERE MEM_SEQNO = M.MEM_SEQNO AND DEL_YN = 'N'
+				) AS RECENT_DT
+			FROM
+				TB_MEMBER M
+			WHERE
+				M.MEM_SEQNO  = #{memSeqno}
+				AND M.DEL_YN = 'N'
+				AND M.MEM_TYP_CD = 'N'						/* 일반회원만 */
+		]]>
+	</select>
+</mapper>

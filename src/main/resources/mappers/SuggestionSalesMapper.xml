@@ -1,0 +1,946 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SuggestionSalesMapper">
+
+	<!-- 추천분양시퀀스 유효성 검증 -->
+	<select id="isExistsSuggstnSalesSeqno" parameterType="Long" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_PROPERTY
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 추천분양 1단계 임시등록 키 조회 -->
+	<select id="getSuggstnSalesTempdataOfRegistrationKey" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				REG_TMP_KEY
+			FROM
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			WHERE
+				REG_CLAS_CD = 'ADM_SUGGST'
+				AND SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND REG_STEP = 1
+		]]>
+	</select>
+	
+	<!-- 관리자추천분양매물 등록 -->
+	<insert id="registerAdminSuggstnSalesProperty" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			INSERT INTO TB_ADMIN_SUGGESTION_SALES_PROPERTY
+				(
+					MEM_SEQNO,
+					SUGGSTN_SALES_REGION_GB_CD,
+					ADDR,
+					ADDR_SHORT_NM,
+					BLD_NM,
+					LAT,
+					LNG,
+					SUGGSTN_SALES_TTL,
+					SALES_DTL_DSCR,
+					MIN_FLR,
+					MAX_FLR,
+					TOT_BLD_CNT,
+					PARKING_CAR_CNT,
+					HUS_HOLD_CNT,
+					LND_AREA,
+					BLD_AREA,
+					TOT_FLR_AREA,
+					FLR_AREA_RATIO,
+					BLD_TO_LND_RATIO,
+					CMPLTN_DATE,
+					EXPCT_MOV_MONTH,
+					DEV_COMP_NM,
+					CONST_COMP_NM,
+					MATTER_PORT_LINK_URL
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{suggstnSalesRegionGbCd},
+					#{addr},
+					#{addrShortNm},
+					#{bldNm},
+					#{lat},
+					#{lng},
+					#{suggstnSalesTtl},
+					#{salesDtlDscr},
+					#{minFlr},
+					#{maxFlr},
+					#{totBldCnt},
+					#{parkingCarCnt},
+					#{husHoldCnt},
+					#{lndArea},
+					#{bldArea},
+					#{totFlrArea},
+					#{flrAreaRatio},
+					#{bldToLndRatio},
+					STR_TO_DATE( #{cmpltnDate}, '%Y%m%d' ),
+					#{expctMovMonth},
+					#{devCompNm},
+					#{constCompNm},
+					#{matterPortLinkUrl}
+				)
+		]]>
+		<selectKey keyProperty="suggstnSalesSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( SUGGSTN_SALES_SEQNO ) AS SUGGSTN_SALES_SEQNO
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_PROPERTY
+		</selectKey>
+	</insert>
+	
+	<!-- 관리자 추천분양 대표이미지 정보 업데이트 -->
+	<update id="updateAdminSuggstnSalesRepImageInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_PROPERTY
+			SET
+				REP_IMG_SAVE_FILE_NM = #{repImgSaveFileNm},
+				REP_IMG_URL = #{repImgUrl}
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 관리자 추천분양 교육자료 첨부파일 정보 등록 -->
+	<insert id="registerAdminSuggstnSalesEducationDataAttch" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			INSERT INTO TB_EDUCATION_DATA_ATTACHMENT
+				(
+					SUGGSTN_SALES_SEQNO,
+					SAVE_FILE_NM,
+					FILE_URL
+				)
+			VALUES
+				(
+					#{suggstnSalesSeqno},
+					#{saveFileNm},
+					#{fileUrl}
+				)
+		]]>
+	</insert>
+	
+	<!-- 관리자추천분양 동정보 등록 -->
+	<insert id="registerAdminSuggstnSalesDongInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			INSERT INTO TB_ADMIN_SUGGESTION_SALES_DONG_INFO
+				(
+					SUGGSTN_SALES_SEQNO,
+					DONG_NM
+				)
+			VALUES
+				(
+					#{suggstnSalesSeqno},
+					#{dongNm}
+				)
+		]]>
+		<selectKey keyProperty="dongSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( DONG_SEQNO ) AS DONG_SEQNO
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_DONG_INFO
+		</selectKey>
+	</insert>
+	
+	<!-- 관리자추천분양 동정보 업데이트 -->
+	<update id="updateAdminSuggstnSalesDongInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_DONG_INFO
+			SET
+				DONG_NM = #{dongNm}
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DONG_SEQNO = #{dongSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 관리자추천분양 동 하위 동별 용도 일괄 삭제 -->
+	<update id="deleteAdminSuggstnSalesDongUnderUages" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DONG_SEQNO = #{dongSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 관리자추천분양 동 하위 층별정보 일괄 삭제 -->
+	<update id="deleteAdminSuggstnSalesDongUnderFloors" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DONG_SEQNO = #{dongSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 관리자추천분양 동정보 삭제 -->
+	<update id="deleteAdminSuggstnSalesDongInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_DONG_INFO
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DONG_SEQNO = #{dongSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 관리자추천분양 동별 용도정보 등록 -->
+	<insert id="registerAdminSuggstnSalesUsageByDongInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			INSERT INTO TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO
+				(
+					DONG_SEQNO,
+					SUGGSTN_SALES_SEQNO,
+					FLR_USAGE_GB_CD
+				)
+			VALUES
+				(
+					#{dongSeqno},
+					#{suggstnSalesSeqno},
+					#{flrUsageGbCd}
+				)
+		]]>
+		<selectKey keyProperty="usageByDongSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( USAGE_BY_DONG_SEQNO ) AS USAGE_BY_DONG_SEQNO
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO
+		</selectKey>
+	</insert>
+	
+	<!-- 관리자추천분양 동별 용도정보 업데이트 -->
+	<update id="updateAdminSuggstnSalesUsageByDongInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO
+			SET
+				FLR_USAGE_GB_CD = #{flrUsageGbCd}
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND USAGE_BY_DONG_SEQNO = #{usageByDongSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+		
+	<!-- 관리자추천분양 동별 용도정보 삭제 -->
+	<update id="deleteAdminSuggstnSalesUsageByDongInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND USAGE_BY_DONG_SEQNO = #{usageByDongSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+		
+	<!-- 관리자추천분양 동별 용도 하위 층별정보 일괄 삭제 -->
+	<update id="deleteAdminSuggstnSalesUsageByDongUnderFloors" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND USAGE_BY_DONG_SEQNO = #{usageByDongSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 관리자추천분양 층별정보 등록 -->
+	<insert id="registerAdminSuggstnSalesFloorInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			INSERT INTO TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO
+				(
+					USAGE_BY_DONG_SEQNO,
+					DONG_SEQNO,
+					SUGGSTN_SALES_SEQNO,
+					ST_FLR,
+					ED_FLR,
+					FLR_PLAN_SAVE_FILE_NM,
+					FLR_PLAN_FILE_URL
+				)
+			VALUES
+				(
+					#{usageByDongSeqno},
+					#{dongSeqno},
+					#{suggstnSalesSeqno},
+					#{stFlr},
+					#{edFlr},
+					#{flrPlanSaveFileNm},
+					#{flrPlanFileUrl}
+				)
+		]]>
+	</insert>
+	
+	<!-- 관리자추천분양 층별정보 업데이트 -->
+	<update id="updateAdminSuggstnSalesFloorInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO
+			SET
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(flrPlanSaveFileNm)">
+				FLR_PLAN_SAVE_FILE_NM = #{flrPlanSaveFileNm},
+				</when>
+				<otherwise>
+					<if test='flrPlanSaveFileDelYn == "Y"'>
+				FLR_PLAN_SAVE_FILE_NM = '',
+					</if>
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(flrPlanFileUrl)">
+				FLR_PLAN_FILE_URL = #{flrPlanFileUrl},
+				</when>
+				<otherwise>
+					<if test='flrPlanSaveFileDelYn == "Y"'>
+				FLR_PLAN_FILE_URL = '',
+					</if>
+				</otherwise>
+			</choose>
+		<![CDATA[
+				ST_FLR = #{stFlr},
+				ED_FLR = #{edFlr}
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DONG_SEQNO = #{dongSeqno}
+				AND SUGGSTN_SALES_FLR_SEQNO = #{suggstnSalesFlrSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 관리자추천분양 층별정보 삭제 -->
+	<update id="deleteAdminSuggstnSalesFloorInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DONG_SEQNO = #{dongSeqno}
+				AND SUGGSTN_SALES_FLR_SEQNO = #{suggstnSalesFlrSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 관리자추천분양 프리미엄정보 등록 -->
+	<insert id="registerAdminSuggstnSalesPremiumInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			INSERT INTO TB_ADMIN_SUGGESTION_SALES_PREMIUM_INFO
+				(
+					SUGGSTN_SALES_SEQNO,
+					PRMM_TTL,
+					PRMM_DSCR
+				)
+			VALUES
+				(
+					#{suggstnSalesSeqno},
+					#{prmmTtl},
+					#{prmmDscr}
+				)
+		]]>
+	</insert>
+	
+	<!-- 관리자추천분양 프리미엄정보 일괄 삭제 -->
+	<delete id="deleteAllAdminSuggstnSalesPremiumInfo" parameterType="Long">
+		DELETE FROM
+			TB_ADMIN_SUGGESTION_SALES_PREMIUM_INFO
+		WHERE
+			SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+	</delete>
+	
+	<!-- 관리자추천분양 일정정보 등록 -->
+	<insert id="registerAdminSuggstnSalesScheduleInfo" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			INSERT INTO TB_ADMIN_SUGGESTION_SALES_SCHEDULE_INFO
+				(
+					SUGGSTN_SALES_SEQNO,
+					SCHDL_NM,
+					SCHDL_ST_DATE,
+					SCHDL_ED_DATE
+				)
+			VALUES
+				(
+					#{suggstnSalesSeqno},
+					#{schdlNm},
+					STR_TO_DATE( #{schdlStDate}, '%Y%m%d' ),
+					STR_TO_DATE( #{schdlEdDate}, '%Y%m%d' )
+				)
+		]]>
+	</insert>
+	
+	<!-- 관리자추천분양 일정정보 일괄 삭제 -->
+	<delete id="deleteAllAdminSuggstnSalesScheduleInfo" parameterType="Long">
+		DELETE FROM
+			TB_ADMIN_SUGGESTION_SALES_SCHEDULE_INFO
+		WHERE
+			SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+	</delete>
+	
+	<!-- 등록단계별임시정보 매물시퀀스 등록 -->
+	<update id="updateTempDataSuggstnSalesSeqno" parameterType="RegistrationTmpDataStepVO">
+		<![CDATA[
+			UPDATE
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			SET
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+			WHERE
+				REG_TMP_KEY = #{regTmpKey}
+				AND REG_CLAS_CD = 'ADM_SUGGST'
+		]]>
+	</update>
+	
+	<!-- 추천분양 매물 목록조회 ( 페이징 ) -->
+	<select id="getSuggstnSalesPrptListItems" parameterType="SuggestionSalesVO" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				L.ROWNUM,
+				L.SUGGSTN_SALES_SEQNO,
+				L.PO_STAT_GB_CD,
+				L.ADDR,
+				L.BLD_NM,
+				DATE_FORMAT( L.CMPLTN_DATE, '%Y.%m.%d' ) AS CMPLTN_DATE,
+				DATE_FORMAT( L.REG_DTTM, '%Y.%m.%d' ) AS REG_DATE,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_ADMIN_SUGGESTION_SALES_PROPERTY
+					WHERE
+						DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(suggstnSalesRegionGbCd)">
+						AND SUGGSTN_SALES_REGION_GB_CD = #{suggstnSalesRegionGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(poStatGbCd)">
+						AND PO_STAT_GB_CD = #{poStatGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+						AND (
+								BLD_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+						)
+			</if>
+		<![CDATA[
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@NUM := @NUM + 1 AS RNUM,
+						T.ROWNUM,
+						T.SUGGSTN_SALES_SEQNO,
+						T.PO_STAT_GB_CD,
+						T.ADDR,
+						T.BLD_NM,
+						T.CMPLTN_DATE,
+						T.REG_DTTM
+					FROM
+						(
+							SELECT
+								@NUM := 0 AS RNUM,
+								@RNUM := @RNUM + 1 AS ROWNUM,
+								F.SUGGSTN_SALES_SEQNO,
+								F.PO_STAT_GB_CD,
+								F.ADDR,
+								F.BLD_NM,
+								F.CMPLTN_DATE,
+								F.REG_DTTM
+							FROM
+								(
+									SELECT
+										@RNUM := 0 AS ROWNUM,
+										SUGGSTN_SALES_SEQNO,
+										PO_STAT_GB_CD,
+										ADDR,
+										BLD_NM,
+										CMPLTN_DATE,
+										REG_DTTM
+									FROM
+										TB_ADMIN_SUGGESTION_SALES_PROPERTY
+									WHERE
+										DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(suggstnSalesRegionGbCd)">
+										AND SUGGSTN_SALES_REGION_GB_CD = #{suggstnSalesRegionGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(poStatGbCd)">
+										AND PO_STAT_GB_CD = #{poStatGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+										AND (
+												BLD_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+												OR
+												ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+										)
+			</if>
+		<![CDATA[
+									ORDER BY
+										REG_DTTM DESC
+									LIMIT #{edRnum}
+								) F
+							ORDER BY
+								F.REG_DTTM
+						) T
+					ORDER BY
+						T.REG_DTTM DESC
+				) L
+			WHERE
+				L.RNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.RNUM
+		]]>
+	</select>
+	
+	<!-- Admin - 추천분양 분양상태 업데이트 -->
+	<update id="updateSuggstnSalesStatItem" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_PROPERTY
+			SET
+				PO_STAT_GB_CD = #{poStatGbCd}
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- Admin - 추천분양 삭제 -->
+	<update id="deleteSuggstnSalesItem" parameterType="Long">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_PROPERTY
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 추천분양 매물 기본정보 조회 -->
+	<select id="getSuggstnSalesPropertyInfo" parameterType="SuggestionSalesVO" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				SSP.SUGGSTN_SALES_REGION_GB_CD,
+				SSP.ADDR,
+				SSP.ADDR_SHORT_NM,
+				SSP.LAT,
+				SSP.LNG,
+				SSP.BLD_NM,
+				SSP.SUGGSTN_SALES_TTL,
+				SSP.SALES_DTL_DSCR,
+				SSP.MIN_FLR,
+				SSP.MAX_FLR,
+				SSP.TOT_BLD_CNT,
+				SSP.PARKING_CAR_CNT,
+				SSP.HUS_HOLD_CNT,
+				SSP.LND_AREA,
+				SSP.BLD_AREA,
+				SSP.TOT_FLR_AREA,
+				SSP.FLR_AREA_RATIO,
+				SSP.BLD_TO_LND_RATIO,
+				DATE_FORMAT( SSP.CMPLTN_DATE, '%Y%m%d' ) AS CMPLTN_DATE,
+				SSP.EXPCT_MOV_MONTH,
+				SSP.DEV_COMP_NM,
+				SSP.CONST_COMP_NM,
+				SSP.MATTER_PORT_LINK_URL,
+				SSP.REP_IMG_URL,
+				IF(
+						(
+							SELECT
+								COUNT(1)
+							FROM
+								TB_FAVORITE_SUGGESTION_SALES
+							WHERE
+								SUGGSTN_SALES_SEQNO = SSP.SUGGSTN_SALES_SEQNO
+								AND MEM_SEQNO = #{memSeqno}
+						) > 0,
+						'Y',
+						'N'
+				) AS FAV_YN
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_PROPERTY SSP
+			WHERE
+				SSP.SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND SSP.DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 추천분양 매물 동 목록조회 -->
+	<select id="getSuggstnSalesDongList" parameterType="Long" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				DONG_SEQNO,
+				DONG_NM
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_DONG_INFO
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DEL_YN = 'N'
+			ORDER BY
+				DONG_NM
+		]]>
+	</select>
+	
+	<!-- 추천분양 매물 동별 용도정보 목록조회 -->
+	<select id="getSuggstnSalesUsageByDongList" parameterType="SuggestionSalesVO" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				USAGE_BY_DONG_SEQNO,
+				FLR_USAGE_GB_CD
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DONG_SEQNO = #{dongSeqno}
+				AND DEL_YN = 'N'
+			ORDER BY
+				FLR_USAGE_GB_CD
+		]]>
+	</select>
+	
+	<!-- 추천분양 매물 동별 용도정보 목록조회 -->
+	<select id="getSuggstnSalesFloorList" parameterType="SuggestionSalesVO" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				SUGGSTN_SALES_FLR_SEQNO,
+				ST_FLR,
+				ED_FLR,
+				FLR_PLAN_FILE_URL
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DONG_SEQNO = #{dongSeqno}
+				AND USAGE_BY_DONG_SEQNO = #{usageByDongSeqno}
+				AND DEL_YN = 'N'
+			ORDER BY
+				ST_FLR
+		]]>
+	</select>
+	
+	<!-- 추천분양 매물 층 및 층별 용도정보 목록조회 -->
+	<select id="getSuggstnSalesFloorWithUsageListOfDong" parameterType="SuggestionSalesVO" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				F.SUGGSTN_SALES_FLR_SEQNO,
+				U.DONG_SEQNO,
+				C.ITEM_CD_NM AS FLR_USAGE_GB_NM,
+				F.ST_FLR,
+				F.ED_FLR,
+				F.FLR_PLAN_FILE_URL
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_FLOOR_INFO F
+					INNER JOIN TB_ADMIN_SUGGESTION_SALES_USAGE_BY_DONG_INFO U
+						ON F.USAGE_BY_DONG_SEQNO = U.USAGE_BY_DONG_SEQNO
+						AND F.DONG_SEQNO = U.DONG_SEQNO
+					INNER JOIN TB_COMN_CD C
+						ON C.COMN_CD = 'FLR_USAGE_GB_CD'
+						AND U.FLR_USAGE_GB_CD = C.ITEM_CD
+			WHERE
+				F.SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND F.DONG_SEQNO = #{dongSeqno}
+				AND F.DEL_YN = 'N'
+				AND U.DEL_YN = 'N'
+			ORDER BY
+				F.ST_FLR
+		]]>
+	</select>
+	
+	<!-- 교육자료 첨부파일 URL 목록조회 -->
+	<select id="getEducationDataAttachmentList" parameterType="Long" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				FILE_URL
+			FROM
+				TB_EDUCATION_DATA_ATTACHMENT
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DEL_YN = 'N'
+			ORDER BY
+				SAVE_FILE_NM
+		]]>
+	</select>
+	
+	<!-- 추천분양 프리미엄정보 목록조회 -->
+	<select id="getSuggstnSalesPrmmList" parameterType="Long" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				PRMM_TTL,
+				PRMM_DSCR
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_PREMIUM_INFO
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+			ORDER BY
+				PRMM_TTL
+		]]>
+	</select>
+	
+	<!-- 추천분양 일정 목록조회 -->
+	<select id="getSuggstnSalesSchdlList" parameterType="Long" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				SCHDL_NM,
+				DATE_FORMAT( SCHDL_ST_DATE, '%Y%m%d' ) AS SCHDL_ST_DATE,
+				DATE_FORMAT( SCHDL_ED_DATE, '%Y%m%d' ) AS SCHDL_ED_DATE,
+				DATEDIFF( NOW(), SCHDL_ST_DATE ) AS DDAY
+			FROM
+				TB_ADMIN_SUGGESTION_SALES_SCHEDULE_INFO
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+			ORDER BY
+				SCHDL_ST_DATE
+		]]>
+	</select>
+	
+	<!-- 관리자 추천분양 매물정보 수정 -->
+	<update id="updateAdminSuggstnSalesProperty" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_ADMIN_SUGGESTION_SALES_PROPERTY
+			SET
+				SUGGSTN_SALES_REGION_GB_CD = #{suggstnSalesRegionGbCd},
+				ADDR = #{addr},
+				ADDR_SHORT_NM = #{addrShortNm},
+				BLD_NM = #{bldNm},
+				LAT = #{lat},
+				LNG = #{lng},
+				SUGGSTN_SALES_TTL = #{suggstnSalesTtl},
+				SALES_DTL_DSCR = #{salesDtlDscr},
+				MIN_FLR = #{minFlr},
+				MAX_FLR = #{maxFlr},
+				TOT_BLD_CNT = #{totBldCnt},
+				PARKING_CAR_CNT = #{parkingCarCnt},
+				HUS_HOLD_CNT = #{husHoldCnt},
+				LND_AREA = #{lndArea},
+				BLD_AREA = #{bldArea},
+				TOT_FLR_AREA = #{totFlrArea},
+				FLR_AREA_RATIO = #{flrAreaRatio},
+				BLD_TO_LND_RATIO = #{bldToLndRatio},
+				CMPLTN_DATE = STR_TO_DATE( #{cmpltnDate}, '%Y%m%d' ),
+				EXPCT_MOV_MONTH = #{expctMovMonth},
+				MATTER_PORT_LINK_URL = #{matterPortLinkUrl},
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(repImgSaveFileNm)">
+				REP_IMG_SAVE_FILE_NM = #{repImgSaveFileNm},
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(repImgUrl)">
+				REP_IMG_URL = #{repImgUrl},
+			</if>
+		<![CDATA[
+				DEV_COMP_NM = #{devCompNm},
+				CONST_COMP_NM = #{constCompNm}
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+		
+	<!-- 교육자료 첨부파일 삭제 -->
+	<update id="deleteEducationDataAttachment" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			UPDATE
+				TB_EDUCATION_DATA_ATTACHMENT
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND FILE_URL = #{fileUrl}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- FRT - 실시간 분양현장 목록조회 ( 페이징 ) -->
+	<select id="getRealtimeSalesItems" parameterType="SuggestionSalesVO" resultType="SuggestionSalesVO">
+		<![CDATA[
+			SELECT
+				L.SUGGSTN_SALES_SEQNO,
+				L.PO_STAT_GB_CD,
+				L.REP_IMG_URL,
+				L.BLD_NM,
+				L.ADDR,
+				L.ADDR_SHORT_NM,
+				CASE
+					WHEN FSS.SUGGSTN_SALES_SEQNO IS NULL
+						THEN 'N'
+					ELSE 'Y'
+				END AS FAV_YN,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_ADMIN_SUGGESTION_SALES_PROPERTY
+					WHERE
+						DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(poStatGbCd)">
+						AND PO_STAT_GB_CD = #{poStatGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(suggstnSalesRegionGbCd)">
+						AND SUGGSTN_SALES_REGION_GB_CD = #{suggstnSalesRegionGbCd}
+			</if>
+		<![CDATA[
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@RNUM := @RNUM + 1 AS ROWNUM,
+						T.SUGGSTN_SALES_SEQNO,
+						T.PO_STAT_GB_CD,
+						T.REP_IMG_URL,
+						T.BLD_NM,
+						T.ADDR,
+						T.ADDR_SHORT_NM
+					FROM
+						(
+							SELECT
+								@RNUM := 0 AS RNUM,
+								SUGGSTN_SALES_SEQNO,
+								PO_STAT_GB_CD,
+								REP_IMG_URL,
+								BLD_NM,
+								ADDR,
+								ADDR_SHORT_NM,
+								REG_DTTM
+							FROM
+								TB_ADMIN_SUGGESTION_SALES_PROPERTY
+							WHERE
+								DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(poStatGbCd)">
+								AND PO_STAT_GB_CD = #{poStatGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(suggstnSalesRegionGbCd)">
+								AND SUGGSTN_SALES_REGION_GB_CD = #{suggstnSalesRegionGbCd}
+			</if>
+		<![CDATA[
+							ORDER BY
+								REG_DTTM DESC
+							LIMIT #{edRnum}
+						) T
+					ORDER BY
+						T.REG_DTTM DESC
+				) L
+					LEFT OUTER JOIN TB_FAVORITE_SUGGESTION_SALES FSS
+						ON L.SUGGSTN_SALES_SEQNO = FSS.SUGGSTN_SALES_SEQNO
+						AND FSS.MEM_SEQNO = #{memSeqno}
+			WHERE
+				L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.ROWNUM
+		]]>
+	</select>
+	
+	<!-- 관심 추천분양 존재여부 검증 -->
+	<select id="isExistsFavSuggstnSales" parameterType="SuggestionSalesVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_FAVORITE_SUGGESTION_SALES
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+		]]>
+	</select>
+	
+	<!-- 관심 추천분양 등록 -->
+	<insert id="registerFavSuggstnSales" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			INSERT INTO TB_FAVORITE_SUGGESTION_SALES
+				(
+					MEM_SEQNO,
+					SUGGSTN_SALES_SEQNO
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{suggstnSalesSeqno}
+				)
+		]]>
+	</insert>
+	
+	<!-- 관심 추천분양 해제 -->
+	<delete id="releaseFavSuggstnSales" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			DELETE FROM
+				TB_FAVORITE_SUGGESTION_SALES
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+		]]>
+	</delete>
+	
+	<!-- 분양알림 설정여부 확인 -->
+	<select id="getSalesSchdlNotiCnt" parameterType="SuggestionSalesVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_SUGGESTION_SALES_NOTIFICATION
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+		]]>
+	</select>
+	
+	<!-- FRT - 분양알림 설정 -->
+	<insert id="setSalesSchdlNoti" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			INSERT INTO TB_SUGGESTION_SALES_NOTIFICATION
+				(
+					SUGGSTN_SALES_SEQNO,
+					MEM_SEQNO
+				)
+			VALUES
+				(
+					#{suggstnSalesSeqno},
+					#{memSeqno}
+				)
+		]]>
+	</insert>
+	
+	<!-- FRT - 분양알림 해제 -->
+	<delete id="releaseSalesSchdlNoti" parameterType="SuggestionSalesVO">
+		<![CDATA[
+			DELETE FROM
+				TB_SUGGESTION_SALES_NOTIFICATION
+			WHERE
+				SUGGSTN_SALES_SEQNO = #{suggstnSalesSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+		]]>
+	</delete>
+</mapper>

@@ -1,0 +1,1887 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="MemberMapper">
+
+	<!-- 로그인토큰 존재여부 확인 -->
+	<select id="getExistsLoginTokenCnt" parameterType="MemberVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_LOGIN_TOKEN
+			WHERE
+				MEM_TYP_CD = #{memTypCd}
+				AND MEM_SEQNO = #{memSeqno}
+				AND LOGIN_TOKEN = #{loginToken}
+		]]>
+	</select>
+	
+	<!-- 로그인 토큰 등록 -->
+	<insert id="registerLoginToken" parameterType="MemberVO" >
+		<![CDATA[
+			INSERT INTO TB_LOGIN_TOKEN
+				(
+					MEM_TYP_CD,
+					MEM_SEQNO,
+					LOGIN_TOKEN,
+					EXPR_DTTM
+				)
+			VALUES
+				(
+					#{memTypCd},
+					#{memSeqno},
+					#{loginToken},
+					DATE_ADD( NOW(), INTERVAL 3 HOUR )
+				)
+		]]>
+	</insert>
+	
+	<!-- 로그인 토큰 갱신 -->
+	<update id="updateLoginToken" parameterType="MemberVO" >
+		<![CDATA[
+			UPDATE
+				TB_LOGIN_TOKEN
+			SET
+				EXPR_DTTM = DATE_ADD( NOW(), INTERVAL 3 HOUR )
+			WHERE
+				MEM_TYP_CD = #{memTypCd}
+				AND MEM_SEQNO = #{memSeqno}
+				AND LOGIN_TOKEN = #{loginToken}
+		]]>
+	</update>
+	
+	<!-- 로그인토큰 유효성 검증 -->
+	<select id="validationLoginTokenExpireDttm" parameterType="MemberVO" resultType="String">
+		<![CDATA[
+			SELECT
+				CASE
+					WHEN DATE_FORMAT( EXPR_DTTM, '%Y%m%d%H%i%s' ) < DATE_FORMAT( NOW(), '%Y%m%d%H%i%s'  )
+						THEN 'E'
+					ELSE
+						'S'
+				END AS VALIDATION_TYP
+			FROM
+				TB_LOGIN_TOKEN
+			WHERE
+				MEM_TYP_CD = #{memTypCd}
+				AND MEM_SEQNO = #{memSeqno}
+				AND LOGIN_TOKEN = #{loginToken}
+		]]>
+	</select>
+	
+	<!-- 이메일 중복검증 -->
+	<select id="emailDupCheck" parameterType="String" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_MEMBER
+			WHERE
+				EMAIL = #{email}
+		]]>
+	</select>
+	
+	<!-- 휴대폰 본인인증 검증확인토큰 검증 -->
+	<select id="validationMobNoCnfrmToken" parameterType="MemberVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_MOBILE_VERIFICATION
+			WHERE
+				MOB_NO = #{mobNo}
+				AND VRF_CNFRM_TOKEN = #{vrfCnfrmToken}
+		]]>
+	</select>
+	
+	<!-- 회원 기본정보 등록 -->
+	<insert id="signupMember" parameterType="MemberVO">
+		<![CDATA[
+			INSERT INTO TB_MEMBER
+				(
+					MEM_TYP_CD,
+					ACNT_APRV_STAT_CD,
+					SNS_GB_CD,
+					EMAIL,
+					PWD,
+					MEM_NAME,
+					MOB_NO,
+					PRFL_IMG_URL,
+					SNS_ID,
+					BIRTH_YEAR,
+					AGE_LVL,
+					GENDER_CD
+				)
+			VALUES
+				(
+					#{memTypCd},
+					#{acntAprvStatCd},
+					#{snsGbCd},
+					#{email},
+					#{pwd},
+					#{memName},
+					#{mobNo},
+					#{prflImgUrl},
+					#{snsId},
+					#{birthYear},
+					#{ageLvl},
+					#{genderCd}
+				)
+		]]>
+		<selectKey keyProperty="memSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( MEM_SEQNO ) AS MEM_SEQNO
+			FROM
+				TB_MEMBER
+		</selectKey>
+	</insert>
+	
+	<!-- 약관 동의정보 삭제 -->
+	<delete id="deleteTermsAgreeIfExists" parameterType="Long">
+		<![CDATA[
+			DELETE FROM
+				TB_TERMS_AGREE
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+		]]>
+	</delete>
+	
+	<!-- 약관 동의정보 등록 -->
+	<insert id="registerTermsAgree" parameterType="MemberVO">
+		<![CDATA[
+			INSERT INTO TB_TERMS_AGREE
+				(
+					MEM_SEQNO,
+					AGE_14_OVR_AGRE_YN,
+					AGE_14_OVR_AGRE_VER,
+					SVC_USE_AGRE_YN,
+					SVC_USE_AGRE_VER,
+					PRSNL_INF_AGRE_YN,
+					PRSNL_INF_AGRE_VER,
+					MKT_RCV_AGRE_YN,
+					MKT_RCV_AGRE_VER
+				)
+			SELECT
+				#{memSeqno} AS MEM_SEQNO,
+				#{age14OvrAgreYn} AS AGE_14_OVR_AGRE_YN,
+				( SELECT RMK FROM TB_COMN_CD WHERE COMN_CD = 'TERMS_VER' AND ITEM_CD = 'AGE_14_OVR_AGRE' ) AS AGE_14_OVR_AGRE_VER,
+				#{svcUseAgreYn} AS SVC_USE_AGRE_YN,
+				( SELECT RMK FROM TB_COMN_CD WHERE COMN_CD = 'TERMS_VER' AND ITEM_CD = 'SVC_USE_AGRE' ) AS SVC_USE_AGRE_VER,
+				#{prsnlInfAgreYn} AS PRSNL_INF_AGRE_YN,
+				( SELECT RMK FROM TB_COMN_CD WHERE COMN_CD = 'TERMS_VER' AND ITEM_CD = 'PRSNL_INF_AGRE' ) AS PRSNL_INF_AGRE_VER,
+				#{mktRcvAgreYn} AS MKT_RCV_AGRE_YN,
+				( SELECT RMK FROM TB_COMN_CD WHERE COMN_CD = 'TERMS_VER' AND ITEM_CD = 'MKT_RCV_AGRE' ) AS MKT_RCV_AGRE_VER
+		]]>
+	</insert>
+	
+	<!-- 휴대폰 본인인증정보 삭제 -->
+	<delete id="deleteMobNoVerification" parameterType="String">
+		<![CDATA[
+			DELETE FROM
+				TB_MOBILE_VERIFICATION
+			WHERE
+				MOB_NO = #{mobNo}
+		]]>
+	</delete>
+	
+	<!-- SNS회원등록정보 존재여부 확인 -->
+	<select id="isExistsSnsRegInfo" parameterType="String" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_SNS_USER_REG_INFO
+			WHERE
+				EMAIL = #{email}
+		]]>
+	</select>
+	
+	<!-- SNS회원정보 등록 -->
+	<insert id="registerSNSUserRegInfo" parameterType="SnsVO">
+		<![CDATA[
+			INSERT INTO TB_SNS_USER_REG_INFO
+				(
+					EMAIL,
+					SNS_GB_CD,
+					AUTH_CD,
+					XSS_TOKEN,
+					SNS_ID,
+					USER_NM,
+					PRFL_IMG_URL,
+					MOB_NO,
+					GENDER_CD,
+					BIRTH_YEAR,
+					BIRTH_DAY,
+					AGE_LVL
+				)
+			VALUES
+				(
+					#{email},
+					#{snsGbCd},
+					#{authCd},
+					#{xssToken},
+					#{snsId},
+					#{userNm},
+					#{prflImgUrl},
+					#{mobNo},
+					#{genderCd},
+					#{birthYear},
+					#{birthDay},
+					#{ageLvl}
+				)
+		]]>
+	</insert>
+	
+	<!-- SNS회원정보 업데이트 -->
+	<update id="updateSNSUserRegInfo" parameterType="SnsVO">
+		<![CDATA[
+			UPDATE
+				TB_SNS_USER_REG_INFO
+			SET
+				SNS_GB_CD = #{snsGbCd},
+				AUTH_CD = #{authCd},
+				XSS_TOKEN = #{xssToken},
+				SNS_ID = #{snsId},
+				USER_NM = #{userNm},
+				PRFL_IMG_URL = #{prflImgUrl},
+				MOB_NO = #{mobNo},
+				GENDER_CD = #{genderCd},
+				BIRTH_YEAR = #{birthYear},
+				BIRTH_DAY = #{birthDay},
+				AGE_LVL = #{ageLvl}
+			WHERE
+				EMAIL = #{email}
+		]]>
+	</update>
+	
+	<!-- SNS회원 등록정보 조회 -->
+	<select id="getSnsUserRegInfo" parameterType="SnsVO" resultType="SnsVO">
+		<![CDATA[
+			SELECT
+				SNS_ID,
+				COALESCE( PRFL_IMG_URL, '' ) AS PRFL_IMG_URL,
+				GENDER_CD,
+				BIRTH_YEAR,
+				AGE_LVL
+			FROM
+				TB_SNS_USER_REG_INFO
+			WHERE
+				EMAIL = #{email}
+				AND SNS_GB_CD = #{snsGbCd}
+				AND AUTH_CD = #{authCd}
+		]]>
+	</select>
+	
+	<!-- SNS회원 등록정보 삭제 -->
+	<delete id="deleteSnsUserRegInfo" parameterType="SnsVO">
+		<![CDATA[
+			DELETE FROM
+				TB_SNS_USER_REG_INFO
+			WHERE
+				EMAIL = #{email}
+				AND SNS_GB_CD = #{snsGbCd}
+				AND AUTH_CD = #{authCd}
+		]]>
+	</delete>
+	
+	<!-- 선택한 중개사무소 정보 조회 -->
+	<select id="getSelectedEstateBrokerOfficeVO" parameterType="Long" resultType="EstateBrokerOfficeVO">
+		<![CDATA[
+			SELECT
+				OPEN_REG_NO,
+				DATE_FORMAT( OPEN_REG_DATE, '%Y%m%d' ) AS OPEN_REG_DATE,
+				OFC_NM,
+				REPR_NM,
+				TEL_NO,
+				CASE
+					WHEN COALESCE( ADDR_ROAD, '' ) != '' AND COALESCE( ADDR_POST, '' ) != ''
+						THEN ADDR_ROAD
+					WHEN COALESCE( ADDR_ROAD, '' ) != ''
+						THEN ADDR_ROAD
+					WHEN COALESCE( ADDR_POST, '' ) != ''
+						THEN ADDR_POST
+					ELSE
+						''
+				END AS ADDR
+			FROM
+				TB_ESTATE_BROKER_OFFICE
+			WHERE
+				EST_BRK_OFC_SEQNO = #{estBrkOfcSeqno}
+		]]>
+	</select>
+	
+	<!-- 중개회원 중개사무소 정보 등록 -->
+	<insert id="registerEstateBrokerOfficeInfo" parameterType="EstateBrokerOfficeVO">
+		<![CDATA[
+			INSERT INTO TB_ESTATE_BROKER_MEMBER_OFFICE_INFO
+				(
+					MEM_SEQNO,
+					BIZ_NO,
+					OPEN_REG_NO,
+					OPEN_REG_DATE,
+					OFC_NM,
+					REPR_NM,
+					TEL_NO,
+					ADDR,
+					ADDR_SHORT_NM,
+					LAT,
+					LNG
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{bizNo},
+					#{openRegNo},
+					STR_TO_DATE( #{openRegDate}, '%Y%m%d' ),
+					#{ofcNm},
+					#{reprNm},
+					#{telNo},
+					#{addr},
+					#{addrShortNm},
+					#{lat},
+					#{lng}
+					
+				)
+		]]>
+	</insert>
+	
+	<!-- 중개회원 첨부파일 등록 -->
+	<insert id="registerEstateBrokerMemberAttachment" parameterType="AttachmentVO">
+		<![CDATA[
+			INSERT INTO TB_ESTATE_BROKER_MEMBER_ATTACHMENT
+				(
+					MEM_SEQNO,
+					ATTCH_FILE_GB_CD,
+					UPLOAD_FILE_NM,
+					SAVE_FILE_NM,
+					FILE_URL
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{attchFileGbCd},
+					#{uploadFileNm},
+					#{saveFileNm},
+					#{fileUrl}
+				)
+		]]>
+	</insert>
+	
+	<!-- 회원 비밀번호 찾기 ( 변경, 이메일을 통한 가입자만 가능 ) -->
+	<update id="resetUserPwd" parameterType="MemberVO" >
+		<![CDATA[
+			UPDATE
+				TB_MEMBER
+			SET
+				PWD = #{pwd},
+				MOD_DTTM = NOW()
+			WHERE
+				EMAIL = #{email}
+				AND MOB_NO = #{mobNo}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- FRT - 이메일 가입회원 중 이메일 존재여부 확인 -->
+	<select id="isExistsEmailSignupMember" parameterType="String" resultType="Long">
+		<![CDATA[
+			SELECT
+				COALESCE( T.MEM_SEQNO, 0 ) AS MEM_SEQNO
+			FROM
+				(
+						SELECT
+							COUNT(1) AS CNT,
+							MEM_SEQNO
+						FROM
+							TB_MEMBER
+						WHERE
+							EMAIL = #{email}
+							AND SNS_GB_CD IS NULL
+							AND MEM_TYP_CD IN ( 'E', 'N' )
+							AND DEL_YN= 'N'
+				) T
+		]]>
+	</select>
+	
+	<!-- FRT - 일반회원 / 중개회원 이메일로 로그인 -->
+	<select id="frtLogin" parameterType="MemberVO" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				M.MEM_SEQNO,
+				COALESCE( EBM.EST_BRK_MEM_OFC_SEQNO, 0 ) AS EST_BRK_MEM_OFC_SEQNO,
+				M.MEM_TYP_CD,
+				M.ACNT_APRV_STAT_CD,
+				M.MEM_NAME,
+				M.EMAIL,
+				COALESCE( M.PRFL_IMG_URL, '' ) AS PRFL_IMG_URL
+			FROM
+				TB_MEMBER M
+					LEFT OUTER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+						ON M.MEM_SEQNO = EBM.MEM_SEQNO
+			WHERE
+				M.EMAIL = #{email}
+				AND M.SNS_GB_CD IS NULL
+				AND M.MEM_TYP_CD IN ( 'E', 'N' )
+				AND M.PWD = #{pwd}
+				AND M.DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 자동로그인 토큰 등록 -->
+	<insert id="registerAutoLotinToken" parameterType="MemberVO">
+		<![CDATA[
+			INSERT INTO TB_AUTO_LOGIN_TOKEN
+				(
+					AUTO_LOGIN_TOKEN,
+					MEM_SEQNO,
+					USER_AGENT,
+					EXPR_DTTM
+				)
+			VALUES
+				(
+					#{autoLoginToken},
+					#{memSeqno},
+					#{userAgent},
+					DATE_ADD( NOW(), INTERVAL 30 DAY )
+				)
+		]]>
+	</insert>
+	
+	<!-- FRT - 일반회원 / 중개회원 자동로그인 -->
+	<select id="frtAutoLogin" parameterType="MemberVO" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				M.MEM_SEQNO,
+				COALESCE( EBM.EST_BRK_MEM_OFC_SEQNO, 0 ) AS EST_BRK_MEM_OFC_SEQNO,
+				M.MEM_TYP_CD,
+				M.MEM_NAME,
+				M.EMAIL,
+				COALESCE( M.PRFL_IMG_URL, '' ) AS PRFL_IMG_URL
+			FROM
+				TB_MEMBER M
+					LEFT OUTER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+						ON M.MEM_SEQNO = EBM.MEM_SEQNO
+			WHERE
+				M.MEM_SEQNO = (
+								SELECT
+									MEM_SEQNO
+								FROM
+									TB_AUTO_LOGIN_TOKEN
+								WHERE
+									AUTO_LOGIN_TOKEN = #{autoLoginToken}
+									AND USER_AGENT = #{userAgent}
+									AND EXPR_DTTM > NOW()
+				)
+			  	AND M.MEM_TYP_CD IN ( 'E', 'N' )
+				AND M.SNS_GB_CD IS NULL
+				AND M.DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 자동로그인 토큰 갱신 -->
+	<update id="updateAutoLotinToken" parameterType="MemberVO" >
+		<![CDATA[
+			UPDATE
+				TB_AUTO_LOGIN_TOKEN
+			SET
+				AUTO_LOGIN_TOKEN = #{newAutoLoginToken},
+				EXPR_DTTM = DATE_ADD( NOW(), INTERVAL 30 DAY )
+			WHERE
+				AUTO_LOGIN_TOKEN = #{autoLoginToken}
+		]]>
+	</update>
+	
+	<!-- FRT - 일반회원 SNS 로그인 -->
+	<select id="frtSnsLogin" parameterType="MemberVO" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				MEM_SEQNO,
+				MEM_TYP_CD,
+				MEM_NAME,
+				EMAIL,
+				COALESCE( PRFL_IMG_URL, '' ) AS PRFL_IMG_URL
+			FROM
+				TB_MEMBER
+			WHERE
+				SNS_GB_CD = #{snsGbCd}
+				AND SNS_ID = #{snsId}
+				AND EMAIL = #{email}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 회원 로그인이력 등록 -->
+	<insert id="registerMemberLoginHist" parameterType="MemberVO">
+		<![CDATA[
+			INSERT INTO TB_MEMBER_LOGIN_HIST
+				(
+					MEM_SEQNO,
+					ACCS_IP,
+					USER_AGENT,
+					LOGIN_HIST_GB_CD
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{accsIp},
+					#{userAgent},
+					#{loginHistGbCd}
+				)
+		]]>
+	</insert>
+
+	<!-- 중개사무소 상세정보 조회 -->
+	<select id="getEstBrkOfcItem" parameterType="Long" resultType="EstateBrokerOfficeVO">
+		<![CDATA[
+			SELECT
+				EB.EST_BRK_MEM_OFC_SEQNO,
+				EB.OPEN_REG_NO,
+				EB.OFC_NM,
+				EB.REPR_NM,
+				EB.ADDR,
+				EB.TEL_NO,
+				M.MOB_NO,
+				M.PRFL_IMG_URL,
+				EB.LAT,
+				EB.LNG
+			FROM
+				TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EB
+					INNER JOIN  TB_MEMBER M
+						ON EB.MEM_SEQNO = M.MEM_SEQNO
+			WHERE
+				EB.EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND M.DEL_YN = 'N'
+				AND M.MEM_TYP_CD = 'E'				/* 중개회원 */
+				AND M.ACNT_APRV_STAT_CD = 'Y'
+		]]>
+	</select>
+	
+	<!-- 중개회원 사무소시퀀스 조회 -->
+	<select id="getEstBrkMemOfcSeqno" parameterType="Long" resultType="Long">
+		<![CDATA[
+			SELECT
+				COALESCE( T.EST_BRK_MEM_OFC_SEQNO, 0 ) AS EST_BRK_MEM_OFC_SEQNO
+			FROM
+				(
+					SELECT
+						COUNT(1) AS CNT,
+						EST_BRK_MEM_OFC_SEQNO
+					FROM	
+						TB_ESTATE_BROKER_MEMBER_OFFICE_INFO
+					WHERE
+						MEM_SEQNO = #{memSeqno}
+				) T
+		]]>
+	</select>
+
+	<!-- Admin - 이메일 관리자 중 이메일 존재여부 확인 -->
+	<select id="isExistsEmailSignupAdmin" parameterType="String" resultType="Long">
+		<![CDATA[
+		SELECT
+			COALESCE( T.MEM_SEQNO, 0 ) AS MEM_SEQNO
+		FROM
+			(
+				SELECT
+					COUNT(1) AS CNT,
+					MEM_SEQNO
+				FROM
+					TB_MEMBER
+				WHERE
+					EMAIL = #{email}
+				  AND SNS_GB_CD IS NULL
+				  AND MEM_TYP_CD = 'A'
+				  AND DEL_YN= 'N'
+			) T
+		]]>
+	</select>
+
+	<!-- Admin - 관리자 이메일로 로그인 -->
+	<select id="adminLogin" parameterType="MemberVO" resultType="MemberVO">
+		<![CDATA[
+		SELECT
+			MEM_SEQNO,
+			MEM_TYP_CD,
+			ACNT_APRV_STAT_CD,
+			MEM_NAME,
+			EMAIL,
+			COALESCE( PRFL_IMG_URL, '' ) AS PRFL_IMG_URL
+		FROM
+			TB_MEMBER
+		WHERE
+			EMAIL = #{email}
+		  AND SNS_GB_CD IS NULL
+		  AND MEM_TYP_CD = 'A'
+		  AND PWD = #{pwd}
+		  AND DEL_YN = 'N'
+		]]>
+	</select>
+
+	<!-- Admin - 관리자 자동로그인 -->
+	<select id="adminAutoLogin" parameterType="MemberVO" resultType="MemberVO">
+		<![CDATA[
+		SELECT
+			MEM_SEQNO,
+			MEM_TYP_CD,
+			MEM_NAME,
+			EMAIL,
+			COALESCE( PRFL_IMG_URL, '' ) AS PRFL_IMG_URL
+		FROM
+			TB_MEMBER
+		WHERE
+				MEM_SEQNO = (
+					SELECT
+						MEM_SEQNO
+					FROM
+						TB_AUTO_LOGIN_TOKEN
+					WHERE
+						AUTO_LOGIN_TOKEN = #{autoLoginToken}
+					  AND USER_AGENT = #{userAgent}
+					  AND EXPR_DTTM > NOW()
+				)
+		  AND MEM_TYP_CD = 'A'
+		  AND SNS_GB_CD IS NULL
+		  AND DEL_YN = 'N'
+		]]>
+	</select>
+
+	<!-- Admin - 중개사 회원 목록 -->
+	<select id="getEstateBrokerMemberList" parameterType="MemberVO" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				L.ROWNUM,
+				L.MEM_SEQNO,
+				L.EST_BRK_MEM_OFC_SEQNO,
+				L.ACNT_APRV_STAT_CD,
+				L.ACTV_STAT_GB_CD,
+				L.EMAIL,
+				L.MEM_NAME,
+				L.OFC_NM,
+				L.OPEN_REG_NO,
+				L.MOB_NO,
+				L.RMK,
+				DATE_FORMAT( L.REG_DTTM, '%Y.%m.%d' ) AS REG_DTTM,
+				DATE_FORMAT( L.MOD_DTTM, '%Y.%m.%d' ) AS MOD_DTTM,
+				DATE_FORMAT( L.DEL_DTTM, '%Y.%m.%d' ) AS DEL_DTTM,
+				( SELECT H.REG_DTTM FROM TB_MEMBER_LOGIN_HIST H WHERE H.MEM_SEQNO = L.MEM_SEQNO ORDER BY H.REG_DTTM DESC LIMIT 1 ) AS LAST_LOGIN_DTTM,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_MEMBER M
+					WHERE
+						M.MEM_TYP_CD = 'E'
+		]]>
+		<choose>
+			<when test=' viewTaget == "N" '> <!-- 가입 대기 -->
+						AND M.ACNT_APRV_STAT_CD IN ( 'N', 'D' )
+						AND M.DEL_YN = 'N'
+			</when>
+			<when test=' viewTaget == "Y" '> <!-- 가입 승인  -->
+						AND M.ACNT_APRV_STAT_CD = 'Y'
+						AND M.DEL_YN = 'N'
+			</when>
+			<when test=' viewTaget == "D" '> <!-- 탈퇴 회원 -->
+						AND M.DEL_YN = 'Y'
+			</when>
+		</choose>
+		<if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(acntAprvStatCd) "> <!-- 가입대기 - 승인상태  -->
+						AND M.ACNT_APRV_STAT_CD = #{acntAprvStatCd}
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(actvStatGbCd)"> <!-- 가입승인 - 활동상태 -->
+						AND M.ACTV_STAT_GB_CD = #{actvStatGbCd}
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+			<choose>
+				<when test=' srchDateType == "W" '>
+						AND M.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+				</when>
+				<when test=' srchDateType == "M" '>
+						AND M.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+				</when>
+				<when test=' srchDateType == "Y" '>
+						AND M.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+				</when>
+			</choose>
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+						AND (
+							M.EMAIL LIKE CONCAT( '%', #{srchVal} , '%' )
+							OR
+							M.MEM_NAME LIKE CONCAT( '%', #{srchVal} , '%' )
+							OR
+							M.MOB_NO = #{srchValEnc}
+						)
+		</if>
+		<![CDATA[
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@RNUM := @RNUM + 1 AS ROWNUM,
+						T.MEM_SEQNO,
+						T.EST_BRK_MEM_OFC_SEQNO,
+						T.ACNT_APRV_STAT_CD,
+						T.ACTV_STAT_GB_CD,
+						T.EMAIL,
+						T.MEM_NAME,
+						T.OFC_NM,
+						T.OPEN_REG_NO,
+						T.MOB_NO,
+						T.RMK,
+						T.REG_DTTM,
+						T.MOD_DTTM,
+						T.DEL_DTTM
+					FROM
+						(
+							SELECT
+								@RNUM := 0 AS RNUM,
+								M.MEM_SEQNO,
+								O.EST_BRK_MEM_OFC_SEQNO,
+								M.ACNT_APRV_STAT_CD,
+								M.ACTV_STAT_GB_CD,
+								M.EMAIL,
+								M.MEM_NAME,
+								O.OFC_NM,
+								O.OPEN_REG_NO,
+								M.MOB_NO,
+								M.RMK,
+								M.REG_DTTM,
+								M.MOD_DTTM,
+								M.DEL_DTTM
+							FROM
+								TB_MEMBER M
+									LEFT OUTER JOIN
+								    	TB_ESTATE_BROKER_MEMBER_OFFICE_INFO O
+										ON M.MEM_SEQNO = O.MEM_SEQNO
+							WHERE
+								M.MEM_TYP_CD = 'E'
+		]]>
+		<choose>
+			<when test=' viewTaget == "N" '> <!-- 가입 대기 -->
+								AND M.ACNT_APRV_STAT_CD IN ( 'N', 'D' )
+								AND M.DEL_YN = 'N'
+			</when>
+			<when test=' viewTaget == "Y" '> <!-- 가입 승인  -->
+								AND M.ACNT_APRV_STAT_CD = 'Y'
+								AND M.DEL_YN = 'N'
+			</when>
+			<when test=' viewTaget == "D" '> <!-- 탈퇴 회원 -->
+								AND M.DEL_YN = 'Y'
+			</when>
+		</choose>
+		<if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(acntAprvStatCd) "> <!-- 가입대기 - 승인상태  -->
+								AND M.ACNT_APRV_STAT_CD = #{acntAprvStatCd}
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(actvStatGbCd)"> <!-- 가입승인 - 활동상태 -->
+								AND M.ACTV_STAT_GB_CD = #{actvStatGbCd}
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+			<choose>
+				<when test=' srchDateType == "W" '>
+								AND M.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+				</when>
+				<when test=' srchDateType == "M" '>
+								AND M.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+				</when>
+				<when test=' srchDateType == "Y" '>
+								AND M.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+				</when>
+			</choose>
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+								AND (
+									M.EMAIL LIKE CONCAT( '%', #{srchVal} , '%' )
+									OR
+									M.MEM_NAME LIKE CONCAT( '%', #{srchVal} , '%' )
+									OR
+									M.MOB_NO = #{srchValEnc}
+								)
+		</if>
+		<![CDATA[
+							ORDER BY
+							    M.MEM_SEQNO DESC
+							LIMIT #{edRnum}
+						) AS T
+					ORDER BY
+						T.MEM_SEQNO DESC
+				) AS L
+			WHERE
+				L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.ROWNUM
+		]]>
+	</select>
+
+	<!-- Admin - 중개사 회원 승인 처리 -->
+	<update id="updateAprvEstateBrokerMember" parameterType="MemberVO" >
+		<![CDATA[
+			UPDATE
+				TB_MEMBER
+			SET
+				ACNT_APRV_STAT_CD = #{acntAprvStatCd},
+				APRV_TREAT_MEM_SEQNO = #{aprvTreatMemSeqno},
+				APRV_TREAT_DTTM = NOW()
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND ACNT_APRV_STAT_CD = 'N'
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+
+	<!-- Admin - 회원 상세 조회 -->
+	<select id="getMemberInfo" parameterType="MemberVO" resultType="MemberVO">
+		SELECT
+			M.MEM_SEQNO,
+			O.EST_BRK_MEM_OFC_SEQNO,
+			M.MEM_TYP_CD,
+			M.ACNT_APRV_STAT_CD,
+			M.ACTV_STAT_GB_CD,
+			C.ITEM_CD_NM AS MEM_TYP_NM,
+			M.MEM_NAME,
+			M.EMAIL,
+			IF( M.SNS_GB_CD IS NULL, 'E', SNS_GB_CD) AS SNS_GB_CD,
+			M.MOB_NO,
+			M.PRFL_IMG_URL,
+			M.RMK,
+			O.OFC_NM,
+			O.REPR_NM,
+			O.ADDR,
+			O.ADDR_SHORT_NM,
+			O.TEL_NO,
+			O.BIZ_NO,
+			O.OPEN_REG_NO,
+			( SELECT COUNT(*) FROM TB_PROPERTY P WHERE P.EST_BRK_MEM_OFC_SEQNO = O.EST_BRK_MEM_OFC_SEQNO ) AS PROPERTY_CNT,
+			DATE_FORMAT( M.REG_DTTM, '%Y.%m.%d' ) AS REG_DTTM,
+			( SELECT DATE_FORMAT( H.REG_DTTM, '%Y.%m.%d' )  FROM TB_MEMBER_LOGIN_HIST H WHERE H.MEM_SEQNO = M.MEM_SEQNO ORDER BY H.REG_DTTM DESC LIMIT 1 ) AS LAST_LOGIN_DTTM,
+			(
+				SELECT
+					COUNT(1)
+				FROM
+					TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+				WHERE
+					EST_BRK_MEM_OFC_SEQNO = O.EST_BRK_MEM_OFC_SEQNO
+					AND DEL_YN = 'N'
+			) AS COMP_MOV_PRPSL_PRPT_CNT,
+			COALESCE(
+						DATE_FORMAT(
+										(
+											SELECT
+												MAX( REG_DTTM )
+											FROM
+												TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+											WHERE
+												EST_BRK_MEM_OFC_SEQNO = O.EST_BRK_MEM_OFC_SEQNO
+												AND DEL_YN = 'N'
+										),
+										'%Y.%m.%d'
+						),
+						''
+			) AS RECENT_COMP_MOV_PRPSL_DT,
+			M.DEL_YN
+		FROM
+			TB_MEMBER M
+				INNER JOIN TB_COMN_CD C
+					ON C.COMN_CD = 'MEM_TYP_CD'
+					AND M.MEM_TYP_CD = C.ITEM_CD
+				LEFT OUTER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO O
+					ON M.MEM_SEQNO = O.MEM_SEQNO
+		WHERE
+			M.MEM_SEQNO = #{memSeqno}
+	</select>
+
+	<!-- Admin - 중개사 회원 첨부 파일 조회 -->
+	<select id="getEstateBrokerMemberAttachmentList" parameterType="AttachmentVO" resultType="AttachmentVO">
+		SELECT
+			MEM_SEQNO,
+			ATTCH_FILE_GB_CD,
+			FILE_URL
+		FROM
+			TB_ESTATE_BROKER_MEMBER_ATTACHMENT
+		WHERE
+			MEM_SEQNO = #{memSeqno}
+		  AND DEL_YN = 'N'
+	</select>
+
+	<!-- Admin - 중개사 회원 활동 상태 변경 -->
+	<update id="updateActvStatMember" parameterType="MemberVO" >
+		<![CDATA[
+			UPDATE
+				TB_MEMBER
+			SET
+		]]>
+		<if test=" actvStatGbCd == 'WDR' ">
+				DEL_YN = 'Y',
+				DEL_DTTM = NOW(),
+		</if>
+		<![CDATA[
+				ACTV_STAT_GB_CD = #{actvStatGbCd}
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+			  	AND DEL_YN = 'N'
+		]]>
+	</update>
+
+	<!-- Admin - 일반 회원 목록 조회  ( 페이징 ) -->
+	<select id="getNormalMemberList" parameterType="MemberVO" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				L.ROWNUM,
+				L.MEM_SEQNO,
+				L.ACTV_STAT_GB_CD,
+				L.EMAIL,
+				L.MEM_NAME,
+				L.SNS_GB_CD,
+				L.MOB_NO,
+				L.RMK,
+				DATE_FORMAT( L.REG_DTTM, '%Y.%m.%d' ) AS REG_DTTM,
+				DATE_FORMAT( L.MOD_DTTM, '%Y.%m.%d' ) AS MOD_DTTM,
+				DATE_FORMAT( L.DEL_DTTM, '%Y.%m.%d' ) AS DEL_DTTM,
+				( SELECT H.REG_DTTM FROM TB_MEMBER_LOGIN_HIST H WHERE H.MEM_SEQNO = L.MEM_SEQNO ORDER BY H.REG_DTTM DESC LIMIT 1 ) AS LAST_LOGIN_DTTM,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_MEMBER M
+					WHERE
+						M.MEM_TYP_CD = 'N'
+						AND M.DEL_YN = #{delYn}
+		]]>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(actvStatGbCd)">
+						AND M.ACTV_STAT_GB_CD = #{actvStatGbCd}
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+			<choose>
+				<when test=' srchDateType == "W" '>
+						AND M.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+				</when>
+				<when test=' srchDateType == "M" '>
+						AND M.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+				</when>
+				<when test=' srchDateType == "Y" '>
+						AND M.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+				</when>
+			</choose>
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+						AND (
+							M.EMAIL LIKE CONCAT( '%', #{srchVal} , '%' )
+							OR
+							M.MEM_NAME LIKE CONCAT( '%', #{srchVal} , '%' )
+							OR
+							M.MOB_NO = #{srchValEnc}
+						)
+		</if>
+		<![CDATA[
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@RNUM := @RNUM + 1 AS ROWNUM,
+						T.MEM_SEQNO,
+						T.ACTV_STAT_GB_CD,
+						T.EMAIL,
+						T.MEM_NAME,
+						T.SNS_GB_CD,
+						T.MOB_NO,
+						T.RMK,
+						T.REG_DTTM,
+						T.MOD_DTTM,
+						T.DEL_DTTM
+					FROM
+						(
+							SELECT
+								@RNUM := 0 AS RNUM,
+								M.MEM_SEQNO,
+								M.ACTV_STAT_GB_CD,
+								M.EMAIL,
+								M.MEM_NAME,
+								IF( M.SNS_GB_CD IS NULL, 'E', SNS_GB_CD) AS SNS_GB_CD,
+								M.MOB_NO,
+								M.RMK,
+								M.REG_DTTM,
+								M.MOD_DTTM,
+								M.DEL_DTTM
+							FROM
+								TB_MEMBER M
+							WHERE
+								M.MEM_TYP_CD = 'N'
+								AND M.DEL_YN = #{delYn}
+		]]>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(actvStatGbCd)">
+								AND M.ACTV_STAT_GB_CD = #{actvStatGbCd}
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+			<choose>
+				<when test=' srchDateType == "W" '>
+								AND M.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+				</when>
+				<when test=' srchDateType == "M" '>
+								AND M.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+				</when>
+				<when test=' srchDateType == "Y" '>
+								AND M.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+				</when>
+			</choose>
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+								AND (
+									M.EMAIL LIKE CONCAT( '%', #{srchVal} , '%' )
+									OR
+									M.MEM_NAME LIKE CONCAT( '%', #{srchVal} , '%' )
+									OR
+									M.MOB_NO = #{srchValEnc}
+								)
+		</if>
+		<![CDATA[
+							ORDER BY
+							    M.MEM_SEQNO DESC
+							LIMIT #{edRnum}
+						) AS T
+					ORDER BY
+						T.MEM_SEQNO DESC
+				) AS L
+			WHERE
+				L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.ROWNUM
+		]]>
+	</select>
+
+	<!-- 회원 정보 수정  -->
+	<update id="updateMemberInfo" parameterType="MemberVO">
+			UPDATE
+			    TB_MEMBER
+			SET
+				<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(memName)">
+					MEM_NAME = #{memName},
+				</if>
+				<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(mobNo)">
+					MOB_NO = #{mobNo},
+				</if>
+				<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(prflImgUrl)">
+					PRFL_IMG_URL = #{prflImgUrl},
+				</if>
+				MOD_DTTM = NOW()
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+	</update>
+
+	<!-- 중개회원 중개사무소 정보 수정 -->
+	<update id="updateOfcInfo" parameterType="EstateBrokerOfficeVO">
+		UPDATE
+			TB_ESTATE_BROKER_MEMBER_OFFICE_INFO
+		SET
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(telNo)">
+				TEL_NO = #{telNo},
+			</if>
+				MOD_DTTM = NOW()
+		WHERE
+		    EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+			AND MEM_SEQNO = #{memSeqno}
+	</update>
+
+	<!-- 회원 비밀번호 수정 -->
+	<update id="updatePassowrd" parameterType="MemberVO">
+		<![CDATA[
+			UPDATE
+				TB_MEMBER
+			SET
+				PWD = #{pwd},
+				MOD_DTTM = NOW()
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+			AND DEL_YN = 'N'
+			AND SNS_GB_CD IS NULL
+			AND MEM_TYP_CD IN ( 'E', 'N' )
+		]]>
+	</update>
+	
+	<!-- FRT - 관심매물 목록 조회 ( 페이징 ) -->
+	<select id="getFavPropertyItems" parameterType="FavRecentPrptVO" resultType="FavRecentPrptVO">
+		<![CDATA[
+			SELECT
+				L.PRPT_TYP,
+				L.SEQNO,
+				L.ESTATE_TYP_CD,
+				L.TRAN_TYP_GB_CD,
+				L.TRAN_TYP_GB_NM,
+				L.DEAL_AMT,
+				L.DPST_AMT,
+				L.MONT_RENT_AMT,
+				L.ADDR,
+				L.ADDR_SHORT_NM,
+				L.LAT,
+				L.LNG,
+				L.REP_IMG_URL,
+				L.SPLY_AREA,
+				L.PRV_AREA,
+				L.LND_AREA,
+				L.TOT_FLR_AREA,
+				L.FLR,
+				L.ALL_FLR,
+				L.MIN_FLR,
+				L.MAX_FLR,
+				L.SMPL_SMR_DSCR,
+				L.BLD_NM,
+				L.PO_STAT_GB_CD,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						(
+								/* 일반 관심매물 */
+								SELECT
+									'P' AS PRPT_TYP,
+									P.PRPT_SEQNO AS SEQNO,
+									P.ESTATE_TYP_CD,
+									P.TRAN_TYP_GB_CD,
+									P.REG_DTTM
+								FROM
+									TB_FAVORITE_PROPERTY FP
+										INNER JOIN TB_PROPERTY P
+											ON FP.PRPT_SEQNO = P.PRPT_SEQNO
+								WHERE
+									FP.MEM_SEQNO = #{memSeqno}
+		]]>
+			<if test='prptTyp == "S"'>
+									AND FALSE		/* 추천분양 조회시 일반매물 제외 */
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(tranTypGbCd)">
+									AND P.TRAN_TYP_GB_CD = #{tranTypGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(estateTypCd)">
+									AND P.ESTATE_TYP_CD = #{estateTypCd}
+			</if>
+		<![CDATA[
+									AND P.DEL_YN = 'N'
+									AND P.DEAL_STAT_GB_CD != 'PRV'																	/* 비공개 제외 */
+									AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+								
+								UNION ALL
+								
+								/* 추천분양 관심매물 */
+								SELECT
+									'S' AS PRPT_TYP,
+									SUGGSTN_SALES_SEQNO AS SEQNO,
+									NULL AS ESTATE_TYP_CD,
+									NULL AS TRAN_TYP_GB_CD,
+									REG_DTTM
+								FROM
+									TB_FAVORITE_SUGGESTION_SALES
+								WHERE
+									MEM_SEQNO = #{memSeqno}
+		]]>
+			<if test='prptTyp == "P"'>
+									AND FALSE		/* 일반매물 조회시 추천분양 제외 */
+			</if>
+		<![CDATA[
+						) U
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@RNUM := @RNUM + 1 AS ROWNUM,
+						T.PRPT_TYP,
+						T.SEQNO,
+						T.ESTATE_TYP_CD,
+						T.TRAN_TYP_GB_CD,
+						T.TRAN_TYP_GB_NM,
+						T.DEAL_AMT,
+						T.DPST_AMT,
+						T.MONT_RENT_AMT,
+						T.ADDR,
+						T.ADDR_SHORT_NM,
+						T.LAT,
+						T.LNG,
+						T.REP_IMG_URL,
+						T.SPLY_AREA,
+						T.PRV_AREA,
+						T.LND_AREA,
+						T.TOT_FLR_AREA,
+						T.FLR,
+						T.ALL_FLR,
+						T.MIN_FLR,
+						T.MAX_FLR,
+						T.SMPL_SMR_DSCR,
+						T.BLD_NM,
+						T.PO_STAT_GB_CD
+					FROM
+						(
+							SELECT
+								@RNUM := 0 AS ROWNUM,
+								U.PRPT_TYP,
+								U.SEQNO,
+								COALESCE( P.ESTATE_TYP_CD, '' ) AS ESTATE_TYP_CD,
+								COALESCE( P.TRAN_TYP_GB_CD, '' ) AS TRAN_TYP_GB_CD,
+								COALESCE( C.ITEM_CD_NM, '' ) AS TRAN_TYP_GB_NM,
+								COALESCE( P.DEAL_AMT, 0 ) AS DEAL_AMT,
+								COALESCE( P.DPST_AMT, 0 ) AS DPST_AMT,
+								COALESCE( P.MONT_RENT_AMT, 0 ) AS MONT_RENT_AMT,
+								CASE
+									WHEN U.PRPT_TYP = 'P'
+										THEN P.ADDR
+									ELSE
+										S.ADDR
+								END AS ADDR,
+								CASE
+									WHEN U.PRPT_TYP = 'P'
+										THEN P.ADDR_SHORT_NM
+									ELSE
+										S.ADDR_SHORT_NM
+								END AS ADDR_SHORT_NM,
+								CASE
+									WHEN U.PRPT_TYP = 'P'
+										THEN P.LAT
+									ELSE
+										S.LAT
+								END AS LAT,
+								CASE
+									WHEN U.PRPT_TYP = 'P'
+										THEN P.LNG
+									ELSE
+										S.LNG
+								END AS LNG,
+								CASE
+									WHEN U.PRPT_TYP = 'P'
+										THEN P.REP_IMG_URL
+									ELSE
+										S.REP_IMG_URL
+								END AS REP_IMG_URL,
+								COALESCE( P.SPLY_AREA, 0 ) AS SPLY_AREA,
+								COALESCE( P.PRV_AREA, 0 ) AS PRV_AREA,
+								COALESCE( P.LND_AREA, 0 ) AS LND_AREA,
+								COALESCE( P.TOT_FLR_AREA, 0 ) AS TOT_FLR_AREA,
+								COALESCE( P.FLR, 0 ) AS FLR,
+								COALESCE( P.ALL_FLR, 0 ) AS ALL_FLR,
+								COALESCE( P.MIN_FLR, 0 ) AS MIN_FLR,
+								COALESCE( P.MAX_FLR, 0 ) AS MAX_FLR,
+								COALESCE( P.SMPL_SMR_DSCR, '' ) AS SMPL_SMR_DSCR,
+								COALESCE( S.BLD_NM, '' ) AS BLD_NM,
+								COALESCE( S.PO_STAT_GB_CD, '' ) AS PO_STAT_GB_CD,
+								U.REG_DTTM
+							FROM
+								(
+									/* 일반 관심매물 */
+									SELECT
+										'P' AS PRPT_TYP,
+										P.PRPT_SEQNO AS SEQNO,
+										P.ESTATE_TYP_CD,
+										P.TRAN_TYP_GB_CD,
+										P.REG_DTTM
+									FROM
+										TB_FAVORITE_PROPERTY FP
+											INNER JOIN TB_PROPERTY P
+												ON FP.PRPT_SEQNO = P.PRPT_SEQNO
+									WHERE
+										FP.MEM_SEQNO = #{memSeqno}
+		]]>
+			<if test='prptTyp == "S"'>
+										AND FALSE		/* 추천분양 조회시 일반매물 제외 */
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(tranTypGbCd)">
+										AND P.TRAN_TYP_GB_CD = #{tranTypGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(estateTypCd)">
+										AND P.ESTATE_TYP_CD = #{estateTypCd}
+			</if>
+		<![CDATA[
+										AND P.DEL_YN = 'N'
+										AND P.DEAL_STAT_GB_CD != 'PRV'																	/* 비공개 제외 */
+										AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+									
+									UNION ALL
+									
+									/* 추천분양 관심매물 */
+									SELECT
+										'S' AS PRPT_TYP,
+										SUGGSTN_SALES_SEQNO AS SEQNO,
+										NULL AS ESTATE_TYP_CD,
+										NULL AS TRAN_TYP_GB_CD,
+										REG_DTTM
+									FROM
+										TB_FAVORITE_SUGGESTION_SALES
+									WHERE
+										MEM_SEQNO = #{memSeqno}
+		]]>
+			<if test='prptTyp == "P"'>
+										AND FALSE		/* 일반매물 조회시 추천분양 제외 */
+			</if>
+		<![CDATA[
+								) U
+									/* 일반 매물 LEFT-JOIN */
+									LEFT OUTER JOIN (
+														SELECT
+															'P' AS PRPT_TYP,
+															P.PRPT_SEQNO AS SEQNO,
+															P.ESTATE_TYP_CD,
+															P.TRAN_TYP_GB_CD,
+															P.ADDR,
+															P.ADDR_SHORT_NM,
+															P.LAT,
+															P.LNG,
+															P.DEAL_AMT,
+															P.DPST_AMT,
+															P.MONT_RENT_AMT,
+															P.SPLY_AREA,
+															P.PRV_AREA,
+															P.LND_AREA,
+															P.TOT_FLR_AREA,
+															P.FLR,
+															P.ALL_FLR,
+															P.MIN_FLR,
+															P.MAX_FLR,
+															PPI.SMPL_SMR_DSCR,
+															COALESCE(
+																		(
+																			SELECT
+																				FILE_URL
+																			FROM
+																				TB_PROPERTY_PHOTOS
+																			WHERE
+																				PRPT_SEQNO = P.PRPT_SEQNO
+																				AND DEL_YN = 'N'
+																				AND REP_PHOTO_YN = 'Y'
+																		), ''
+															) AS REP_IMG_URL,
+															( SELECT COUNT(1) FROM TB_FAVORITE_PROPERTY WHERE MEM_SEQNO = 10 AND PRPT_SEQNO = P.PRPT_SEQNO ) AS FAV_CNT
+														FROM
+															TB_PROPERTY P
+																INNER JOIN TB_PROPERTY_PHOTO_INFO PPI
+																	ON P.PRPT_SEQNO = PPI.PRPT_SEQNO
+														WHERE
+															P.DEL_YN = 'N'
+															AND P.DEAL_STAT_GB_CD != 'PRV'																	/* 비공개 제외 */
+															AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+									) P
+										ON U.PRPT_TYP = P.PRPT_TYP
+										AND U.SEQNO = P.SEQNO
+									LEFT OUTER JOIN (
+														SELECT
+															'S' AS PRPT_TYP,
+															SSP.SUGGSTN_SALES_SEQNO AS SEQNO,
+															SSP.ADDR,
+															SSP.ADDR_SHORT_NM,
+															SSP.LAT,
+															SSP.LNG,
+															SSP.BLD_NM,
+															SSP.PO_STAT_GB_CD,
+															SSP.REP_IMG_URL,
+															( SELECT COUNT(1) FROM TB_FAVORITE_SUGGESTION_SALES WHERE MEM_SEQNO = 10 AND SUGGSTN_SALES_SEQNO = SSP.SUGGSTN_SALES_SEQNO ) AS FAV_CNT
+														FROM
+															TB_ADMIN_SUGGESTION_SALES_PROPERTY SSP
+														WHERE
+															SSP.DEL_YN = 'N'
+									) S
+										ON U.PRPT_TYP = S.PRPT_TYP
+										AND U.SEQNO = S.SEQNO
+									LEFT OUTER JOIN TB_COMN_CD C
+										ON C.COMN_CD = 'TRAN_TYP_GB_CD'
+										AND P.TRAN_TYP_GB_CD = C.ITEM_CD
+							WHERE
+								CASE U.PRPT_TYP WHEN 'P' THEN P.SEQNO IS NOT NULL ELSE S.SEQNO IS NOT NULL END
+							ORDER BY
+								U.REG_DTTM DESC
+							LIMIT #{edRnum}
+						) T
+					ORDER BY
+						T.REG_DTTM DESC
+				) L
+			WHERE
+				L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.ROWNUM
+		]]>
+	</select>
+
+	<!-- FRT - 최근 본 매물 목록조회 -->
+	<select id="getRecentPropertyItems" parameterType="FavRecentPrptVO" resultType="FavRecentPrptVO">
+		<![CDATA[
+			SELECT
+				T.PRPT_TYP,
+				T.SEQNO,
+				COALESCE( P.ESTATE_TYP_CD, '' ) AS ESTATE_TYP_CD,
+				COALESCE( P.TRAN_TYP_GB_CD, '' ) AS TRAN_TYP_GB_CD,
+				COALESCE( C.ITEM_CD_NM, '' ) AS TRAN_TYP_GB_NM,
+				COALESCE( P.DEAL_AMT, 0 ) AS DEAL_AMT,
+				COALESCE( P.DPST_AMT, 0 ) AS DPST_AMT,
+				COALESCE( P.MONT_RENT_AMT, 0 ) AS MONT_RENT_AMT,
+				CASE
+					WHEN T.PRPT_TYP = 'P'
+						THEN P.ADDR
+					ELSE
+						S.ADDR
+				END AS ADDR,
+				CASE
+					WHEN T.PRPT_TYP = 'P'
+						THEN P.ADDR_SHORT_NM
+					ELSE
+						S.ADDR_SHORT_NM
+				END AS ADDR_SHORT_NM,
+				CASE
+					WHEN T.PRPT_TYP = 'P'
+						THEN P.LAT
+					ELSE
+						S.LAT
+				END AS LAT,
+				CASE
+					WHEN T.PRPT_TYP = 'P'
+						THEN P.LNG
+					ELSE
+						S.LNG
+				END AS LNG,
+				COALESCE( P.SPLY_AREA, 0 ) AS SPLY_AREA,
+				COALESCE( P.PRV_AREA, 0 ) AS PRV_AREA,
+				COALESCE( P.LND_AREA, 0 ) AS LND_AREA,
+				COALESCE( P.TOT_FLR_AREA, 0 ) AS TOT_FLR_AREA,
+				COALESCE( P.FLR, 0 ) AS FLR,
+				COALESCE( P.ALL_FLR, 0 ) AS ALL_FLR,
+				COALESCE( P.MIN_FLR, 0 ) AS MIN_FLR,
+				COALESCE( P.MAX_FLR, 0 ) AS MAX_FLR,
+				COALESCE( P.SMPL_SMR_DSCR, '' ) AS SMPL_SMR_DSCR,
+				COALESCE( S.BLD_NM, '' ) AS BLD_NM,
+				COALESCE( S.PO_STAT_GB_CD, '' ) AS PO_STAT_GB_CD,
+				CASE
+					WHEN T.PRPT_TYP = 'P'
+						THEN CASE WHEN P.FAV_CNT > 0 THEN 'Y' ELSE 'N' END
+					ELSE
+						CASE WHEN S.FAV_CNT > 0 THEN 'Y' ELSE 'N' END
+				END AS FAV_YN
+			FROM
+				(
+					SELECT
+						U.PRPT_TYP,
+						U.SEQNO,
+						MAX( U.SRCH_DTTM ) AS SRCH_DTTM
+					FROM
+						(
+		]]>
+			<foreach collection="resentItems" item="resentItem" separator="UNION ALL">
+							SELECT
+								#{resentItem.prptTyp} AS PRPT_TYP,
+								#{resentItem.seqno} AS SEQNO,
+								#{resentItem.srchDttm} AS SRCH_DTTM
+			</foreach>
+		<![CDATA[
+						) U
+					GROUP BY
+						U.PRPT_TYP, U.SEQNO
+				) T
+					/* 일반 매물 LEFT-JOIN */
+					LEFT OUTER JOIN (
+										SELECT
+											'P' AS PRPT_TYP,
+											P.PRPT_SEQNO AS SEQNO,
+											P.ESTATE_TYP_CD,
+											P.TRAN_TYP_GB_CD,
+											P.ADDR,
+											P.ADDR_SHORT_NM,
+											P.LAT,
+											P.LNG,
+											P.DEAL_AMT,
+											P.DPST_AMT,
+											P.MONT_RENT_AMT,
+											P.SPLY_AREA,
+											P.PRV_AREA,
+											P.LND_AREA,
+											P.TOT_FLR_AREA,
+											P.FLR,
+											P.ALL_FLR,
+											P.MIN_FLR,
+											P.MAX_FLR,
+											PPI.SMPL_SMR_DSCR,
+											( SELECT COUNT(1) FROM TB_FAVORITE_PROPERTY WHERE MEM_SEQNO = 10 AND PRPT_SEQNO = P.PRPT_SEQNO ) AS FAV_CNT
+										FROM
+											TB_PROPERTY P
+												INNER JOIN TB_PROPERTY_PHOTO_INFO PPI
+													ON P.PRPT_SEQNO = PPI.PRPT_SEQNO
+										WHERE
+											P.DEL_YN = 'N'
+											AND P.DEAL_STAT_GB_CD != 'PRV'																	/* 비공개 제외 */
+											AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+					) P
+						ON T.PRPT_TYP = P.PRPT_TYP
+						AND T.SEQNO = P.SEQNO
+					LEFT OUTER JOIN (
+										SELECT
+											'S' AS PRPT_TYP,
+											SSP.SUGGSTN_SALES_SEQNO AS SEQNO,
+											SSP.ADDR,
+											SSP.ADDR_SHORT_NM,
+											SSP.LAT,
+											SSP.LNG,
+											SSP.BLD_NM,
+											SSP.PO_STAT_GB_CD,
+											( SELECT COUNT(1) FROM TB_FAVORITE_SUGGESTION_SALES WHERE MEM_SEQNO = 10 AND SUGGSTN_SALES_SEQNO = SSP.SUGGSTN_SALES_SEQNO ) AS FAV_CNT
+										FROM
+											TB_ADMIN_SUGGESTION_SALES_PROPERTY SSP
+										WHERE
+											SSP.DEL_YN = 'N'
+					) S
+						ON T.PRPT_TYP = S.PRPT_TYP
+						AND T.SEQNO = S.SEQNO
+					LEFT OUTER JOIN TB_COMN_CD C
+						ON C.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND P.TRAN_TYP_GB_CD = C.ITEM_CD
+			WHERE
+				CASE T.PRPT_TYP WHEN 'P' THEN P.SEQNO IS NOT NULL ELSE S.SEQNO IS NOT NULL END
+			ORDER BY
+				T.SRCH_DTTM DESC
+			LIMIT 50
+		]]>
+	</select>
+
+	<!-- 알림 목록 조회 -->
+	<select id="getNotificationList" parameterType="NotificationVO" resultType="NotificationVO">
+		<![CDATA[
+			SELECT
+				N.NOTI_SEQNO,
+				N.MEM_SEQNO,
+				N.NOTI_GB_CD,
+				N.NOTI_TTL,
+				N.NOTI_DSCR,
+				N.PRPT_SEQNO,
+				N.SUGGSTN_SALES_SEQNO,
+				N.REG_DTTM,
+				N.CNFRM_YN
+			FROM
+				TB_NOTIFICATION N
+			WHERE
+				N.MEM_SEQNO = #{memSeqno}
+			  	AND N.NOTI_GB_CD = #{notiGbCd}
+			  	AND N.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 MONTH )
+			ORDER BY N.REG_DTTM DESC
+		]]>
+	</select>
+
+	<!-- 미확인 알림 갯수 조회 -->
+	<select id="getNotCnfrmNotificationCnt" parameterType="Long" resultType="NotificationVO">
+		<![CDATA[
+			SELECT
+				( SELECT COUNT(*) FROM TB_NOTIFICATION WHERE MEM_SEQNO = #{memSeqno} AND CNFRM_YN = 'N' AND NOTI_GB_CD = 'NOTI' ) AS NOTI_CNT,
+				( SELECT COUNT(*) FROM TB_NOTIFICATION WHERE MEM_SEQNO = #{memSeqno} AND CNFRM_YN = 'N' AND NOTI_GB_CD = 'PRPT' ) AS PRPT_CNT,
+				( SELECT COUNT(*) FROM TB_NOTIFICATION WHERE MEM_SEQNO = #{memSeqno} AND CNFRM_YN = 'N' AND NOTI_GB_CD = 'SALES' ) AS SALES_CNT,
+				( SELECT COUNT(*) FROM TB_NOTIFICATION WHERE MEM_SEQNO = #{memSeqno} AND CNFRM_YN = 'N' AND NOTI_GB_CD = 'SCHDL' ) AS SCHDL_CNT
+			FROM DUAL
+		]]>
+	</select>
+
+	<!-- 알림 확인 처리 -->
+	<update id="updateNotificationCnfrm" parameterType="NotificationVO">
+		<![CDATA[
+			UPDATE
+				TB_NOTIFICATION
+			SET
+			    CNFRM_YN = 'Y'
+			WHERE
+			    NOTI_SEQNO = #{notiSeqno}
+				AND MEM_SEQNO = #{memSeqno}
+		]]>
+	</update>
+
+	<!-- Admin - 일반 회원 목록 조회 - Excel Download -->
+	<select id="getNormalMemberExcelDownloadList" parameterType="MemberVO" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				M.MEM_SEQNO,
+				M.ACTV_STAT_GB_CD,
+    			CD.ITEM_CD_NM AS ACTV_STAT_GB_NM,
+				M.EMAIL,
+				M.MEM_NAME,
+				IF( M.SNS_GB_CD IS NULL, 'E', SNS_GB_CD) AS SNS_GB_CD,
+				M.MOB_NO,
+				M.RMK,
+				DATE_FORMAT( M.REG_DTTM, '%Y.%m.%d' ) AS REG_DTTM,
+				DATE_FORMAT( M.MOD_DTTM, '%Y.%m.%d' ) AS MOD_DTTM,
+				( SELECT DATE_FORMAT( H.REG_DTTM, '%Y.%m.%d' ) FROM TB_MEMBER_LOGIN_HIST H WHERE H.MEM_SEQNO = M.MEM_SEQNO ORDER BY H.REG_DTTM DESC LIMIT 1 ) AS LAST_LOGIN_DTTM
+			FROM
+				TB_MEMBER M
+    			INNER JOIN TB_COMN_CD CD ON CD.COMN_CD = 'ACTV_STAT_GB_CD' AND CD.ITEM_CD = M.ACTV_STAT_GB_CD
+			WHERE
+				M.MEM_TYP_CD = 'N'
+				AND M.DEL_YN = #{delYn}
+		]]>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(actvStatGbCd)">
+				AND M.ACTV_STAT_GB_CD = #{actvStatGbCd}
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+			<choose>
+				<when test=' srchDateType == "W" '>
+				AND M.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+				</when>
+				<when test=' srchDateType == "M" '>
+				AND M.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+				</when>
+				<when test=' srchDateType == "Y" '>
+				AND M.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+				</when>
+			</choose>
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+			AND (
+				M.EMAIL LIKE CONCAT( '%', #{srchVal} , '%' )
+				OR
+				M.MEM_NAME LIKE CONCAT( '%', #{srchVal} , '%' )
+				OR
+				M.MOB_NO = #{srchValEnc}
+			)
+		</if>
+		<![CDATA[
+			ORDER BY
+				M.MEM_SEQNO DESC
+		]]>
+	</select>
+
+	<!-- Admin - 중개사 회원 목록 조회 - Excel Download -->
+	<select id="getEstateBrokerMemberExcelDownloadList" parameterType="MemberVO" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				M.MEM_SEQNO,
+				O.EST_BRK_MEM_OFC_SEQNO,
+				M.ACNT_APRV_STAT_CD,
+				CD2.ITEM_CD_NM AS ACNT_APRV_STAT_NM,
+				M.ACTV_STAT_GB_CD,
+    			CD.ITEM_CD_NM AS ACTV_STAT_GB_NM,
+				M.EMAIL,
+				M.MEM_NAME,
+				O.OFC_NM,
+				O.OPEN_REG_NO,
+				M.MOB_NO,
+				M.RMK,
+				DATE_FORMAT( M.REG_DTTM, '%Y.%m.%d' ) AS REG_DTTM,
+				DATE_FORMAT( M.MOD_DTTM, '%Y.%m.%d' ) AS MOD_DTTM,
+				DATE_FORMAT( M.DEL_DTTM, '%Y.%m.%d' ) AS DEL_DTTM,
+				( SELECT H.REG_DTTM FROM TB_MEMBER_LOGIN_HIST H WHERE H.MEM_SEQNO = M.MEM_SEQNO ORDER BY H.REG_DTTM DESC LIMIT 1 ) AS LAST_LOGIN_DTTM
+			FROM
+				TB_MEMBER M
+				LEFT OUTER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO O ON M.MEM_SEQNO = O.MEM_SEQNO
+				INNER JOIN TB_COMN_CD CD ON CD.COMN_CD = 'ACTV_STAT_GB_CD' AND CD.ITEM_CD = M.ACTV_STAT_GB_CD
+				INNER JOIN TB_COMN_CD CD2 ON CD2.COMN_CD = 'ACNT_APRV_STAT_CD' AND CD2.ITEM_CD = M.ACNT_APRV_STAT_CD
+			WHERE
+				M.MEM_TYP_CD = 'E'
+		]]>
+		<choose>
+			<when test=' viewTaget == "N" '> <!-- 가입 대기 -->
+				AND M.ACNT_APRV_STAT_CD IN ( 'N', 'D' )
+				AND M.DEL_YN = 'N'
+			</when>
+			<when test=' viewTaget == "Y" '> <!-- 가입 승인  -->
+				AND M.ACNT_APRV_STAT_CD = 'Y'
+				AND M.DEL_YN = 'N'
+			</when>
+			<when test=' viewTaget == "D" '> <!-- 탈퇴 회원 -->
+				AND M.DEL_YN = 'Y'
+			</when>
+		</choose>
+		<if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(acntAprvStatCd) "> <!-- 가입대기 - 승인상태  -->
+				AND M.ACNT_APRV_STAT_CD = #{acntAprvStatCd}
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(actvStatGbCd)"> <!-- 가입승인 - 활동상태 -->
+				AND M.ACTV_STAT_GB_CD = #{actvStatGbCd}
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+			<choose>
+				<when test=' srchDateType == "W" '>
+					AND M.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+				</when>
+				<when test=' srchDateType == "M" '>
+					AND M.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+				</when>
+				<when test=' srchDateType == "Y" '>
+					AND M.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+				</when>
+			</choose>
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+				AND (
+					M.EMAIL LIKE CONCAT( '%', #{srchVal} , '%' )
+					OR
+					M.MEM_NAME LIKE CONCAT( '%', #{srchVal} , '%' )
+					OR
+					M.MOB_NO = #{srchValEnc}
+				)
+		</if>
+		<![CDATA[
+			ORDER BY
+				M.MEM_SEQNO DESC
+		]]>
+	</select>
+
+	<!-- 공지 알림 등록 -->
+	<insert id="registerPublicNotification" parameterType="PublicNotificationVO">
+		<![CDATA[
+		INSERT INTO TB_PUBLIC_NOTIFICATION
+		(
+			NOTI_TYP_GB_CD,
+			SEND_DT,
+			NOTI_DSCR
+		)VALUES(
+				   #{notiTypGbCd},
+				   #{sendDt},
+				   #{notiDscr}
+			   )
+		]]>
+	</insert>
+
+	<!-- 공지 알림 삭제 -->
+	<update id="deletePublicNotification" parameterType="PublicNotificationVO">
+		<![CDATA[
+		UPDATE
+			TB_PUBLIC_NOTIFICATION
+		SET
+			DEL_YN = 'Y'
+		WHERE
+			PUBLIC_NOTI_SEQNO = #{publicNotiSeqno}
+		]]>
+	</update>
+
+	<!-- 공지 알림 수정 -->
+	<update id="updatePublicNotification" parameterType="PublicNotificationVO">
+		<![CDATA[
+			UPDATE
+				TB_PUBLIC_NOTIFICATION
+		]]>
+		<set>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(notiTypGbCd)">
+				NOTI_TYP_GB_CD = #{notiTypGbCd},
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(sendDt)">
+				SEND_DT = #{sendDt},
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(notiDscr)">
+				NOTI_DSCR = #{notiDscr},
+			</if>
+		</set>
+		<![CDATA[
+			WHERE
+				PUBLIC_NOTI_SEQNO = #{publicNotiSeqno}
+				AND DEL_YN = 'N'
+				AND SEND_TREAT_DTTM IS NULL
+		]]>
+	</update>
+
+	<!-- 공지 알림 상세 조회 -->
+	<select id="getPublicNotificationInfo" parameterType="Long" resultType="PublicNotificationVO">
+		<![CDATA[
+		SELECT
+			PUBLIC_NOTI_SEQNO,
+			NOTI_TYP_GB_CD,
+			DATE_FORMAT( SEND_DT, '%Y.%m.%d' ) AS SEND_DT,
+			NOTI_DSCR,
+			DATE_FORMAT( SEND_TREAT_DTTM, '%Y.%m.%d %H:%i' ) AS SEND_TREAT_DTTM,
+			RCPNT_CNT,
+			IF( DATE_FORMAT( NOW(), '%Y.%m.%d' ) < DATE_FORMAT( SEND_DT, '%Y.%m.%d' ) , 'Y', 'N' ) AS MOD_YN,
+			DATE_FORMAT( REG_DTTM, '%Y.%m.%d %H:%i' ) AS REG_DTTM
+		FROM
+			TB_PUBLIC_NOTIFICATION
+		WHERE
+			PUBLIC_NOTI_SEQNO = #{publicNotiSeqno}
+			AND DEL_YN = 'N'
+		]]>
+	</select>
+
+	<!-- 공지 알람 목록 조회 ( 페이징 ) -->
+	<select id="getPublicNotificationList" parameterType="PublicNotificationVO" resultType="PublicNotificationVO">
+		<![CDATA[
+		SELECT
+			L.ROWNUM,
+			L.PUBLIC_NOTI_SEQNO,
+			L.NOTI_TYP_GB_CD,
+    		L.ITEM_CD_NM AS NOTI_TYP_GB_NM,
+			DATE_FORMAT( L.SEND_DT, '%Y.%m.%d' ) AS SEND_DT,
+			L.NOTI_DSCR,
+			DATE_FORMAT( L.SEND_TREAT_DTTM, '%Y.%m.%d %H:%i' ) AS SEND_TREAT_DTTM,
+			L.RCPNT_CNT,
+			DATE_FORMAT( L.REG_DTTM, '%Y.%m.%d %H:%i' ) AS REG_DTTM,
+			IF( DATE_FORMAT( NOW(), '%Y.%m.%d' ) < DATE_FORMAT( L.SEND_DT, '%Y.%m.%d' ), 'Y', 'N' ) AS MOD_YN,
+			(
+				SELECT
+					count(*)
+				FROM
+					TB_PUBLIC_NOTIFICATION PN
+				WHERE
+					PN.DEL_YN = 'N'
+		]]>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+					AND PN.NOTI_DSCR LIKE CONCAT( '%', #{srchVal} , '%' )
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+			<choose>
+				<when test=' srchDateType == "W" '>
+					AND PN.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+				</when>
+				<when test=' srchDateType == "M" '>
+					AND PN.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+				</when>
+				<when test=' srchDateType == "Y" '>
+					AND PN.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+				</when>
+			</choose>
+		</if>
+		<![CDATA[
+			) AS TOTAL_COUNT
+		FROM
+			(
+				SELECT
+					@RNUM := @RNUM + 1 AS ROWNUM,
+					T.PUBLIC_NOTI_SEQNO,
+					T.NOTI_TYP_GB_CD,
+            		T.ITEM_CD_NM,
+					T.SEND_DT,
+					T.NOTI_DSCR,
+					T.SEND_TREAT_DTTM,
+					T.RCPNT_CNT,
+					T.REG_DTTM
+				FROM
+					(
+						SELECT
+							@RNUM := 0 AS RNUM,
+							PN.PUBLIC_NOTI_SEQNO,
+							PN.NOTI_TYP_GB_CD,
+                    		CD.ITEM_CD_NM,
+							PN.SEND_DT,
+							PN.NOTI_DSCR,
+							PN.SEND_TREAT_DTTM,
+							PN.RCPNT_CNT,
+							PN.REG_DTTM
+						FROM
+							TB_PUBLIC_NOTIFICATION PN
+                    		INNER JOIN TB_COMN_CD CD ON CD.COMN_CD = 'NOTI_TYP_GB_CD' AND CD.ITEM_CD = PN.NOTI_TYP_GB_CD
+						WHERE
+							PN.DEL_YN = 'N'
+		]]>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+							AND PN.NOTI_DSCR LIKE CONCAT( '%', #{srchVal} , '%' )
+		</if>
+		<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+			<choose>
+				<when test=' srchDateType == "W" '>
+							AND PN.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+				</when>
+				<when test=' srchDateType == "M" '>
+							AND PN.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+				</when>
+				<when test=' srchDateType == "Y" '>
+							AND PN.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+				</when>
+			</choose>
+		</if>
+		<![CDATA[
+							ORDER BY
+								PN.PUBLIC_NOTI_SEQNO DESC
+						LIMIT #{edRnum}
+					) AS T
+				ORDER BY
+					T.PUBLIC_NOTI_SEQNO DESC
+			) AS L
+		WHERE
+			L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+		ORDER BY
+			L.ROWNUM
+		]]>
+	</select>
+
+</mapper>

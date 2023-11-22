@@ -1,0 +1,3464 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PropertyMapper">
+
+	<!-- 매물등록번호 K - 다음 순번 조회 ( 지식산업센터 ) -->
+	<select id="getNextKPrptRegNum" resultType="Integer">
+		<![CDATA[
+			SELECT
+				CAST( COALESCE( MAX( T.PRPT_REG_NUM ), 0 ) AS SIGNED ) + 1 AS PRPT_REG_NUM
+			FROM
+				(
+					SELECT
+						SUBSTR( PRPT_REG_NO, 9, 3 ) AS PRPT_REG_NUM
+					FROM
+						TB_KNOWLEDGE_INDUSTRY_COMPLEX			/* 지식산업센터 */
+					WHERE
+						DATE_FORMAT( REG_DTTM, '%Y%m%d' )  = DATE_FORMAT( NOW(), '%Y%m%d' )
+				) T
+		]]>
+	</select>
+
+	<!-- 매물등록번호 P - 다음 순번 조회 ( 매물 ) -->
+	<select id="getNextPPrptRegNum" resultType="Integer">
+		<![CDATA[
+			SELECT
+				CAST( COALESCE( MAX( T.PRPT_REG_NUM ), 0 ) AS SIGNED ) + 1 AS PRPT_REG_NUM
+			FROM
+				(
+					SELECT
+						SUBSTR( PRPT_REG_NO, 9, 3 ) AS PRPT_REG_NUM
+					FROM
+						TB_PROPERTY			/* 매물정보 */
+					WHERE
+						DATE_FORMAT( REG_DTTM, '%Y%m%d' )  = DATE_FORMAT( NOW(), '%Y%m%d' )
+				) T
+		]]>
+	</select>
+	
+	<!-- 매물 기본정보 등록 ( 1 ~ 4 단계 정보 ) -->
+	<insert id="registerProperty" parameterType="PropertyVO">
+		<![CDATA[
+			INSERT INTO TB_PROPERTY
+				(
+					EST_BRK_MEM_OFC_SEQNO,
+					PRPT_REG_NO,
+					ESTATE_TYP_GB_CD,
+					ESTATE_TYP_CD,
+					TRAN_TYP_GB_CD,
+					DEAL_AMT,
+					DEAL_AMT_DISCSN_PSBL_YN,
+					DPST_AMT,
+					MONT_RENT_AMT,
+					EXISTNG_LEASE_EXSTS_YN,
+					
+					CRNT_DPST_AMT,
+					CRNT_MONT_RENT_AMT,
+					KEY_MON_EXSTS_YN,
+					KEY_MON_AMT,
+					PRMM_AMT,
+					CMPLT_EXPCT_DATE,
+					ADDR,
+					DTL_ADDR,
+					ADDR_SHORT_NM,
+					LAT,
+					LNG,
+					MAP_DISP_YN,
+					TMP_ADDR_YN,
+					UNREGIST_YN,
+					
+					FLR,
+					ALL_FLR,
+					MIN_FLR,
+					MAX_FLR,
+					SPLY_AREA,
+					PRV_AREA,
+					
+					LND_AREA,
+					TOT_FLR_AREA,
+					USE_CNFRM_DATE,
+					BLD_USAGE_GB_CD,
+					SUGGSTN_BLD_USAGE_GB_CD,
+					LND_CRNT_USAGE_GB_CD,
+					PSBL_MOV_DAY_TYP_CD,
+					PSBL_MOV_DATE,
+					MON_MNTNCE_COST,
+					LOAN_GB_CD,
+					
+					LOAN_AMT,
+					PARKING_PSBL_YN,
+					PARKING_COST,
+					ROOM_CNT,
+					BATH_ROOM_CNT,
+					CRNT_SECTR_GB_CD,
+					SUGGSTN_SECTR_GB_CD,
+					BLD_DIRCTN_GB_CD,
+					HEAT_KIND_GB_CD,
+					WGHT_PER_PY,
+					
+					ELV_FCLT_EXSTS_YN,
+					FRHGT_ELV_EXSTS_YN,
+					INTRR_YN,
+					DOCK_EXSTS_YN,
+					HOIST_EXSTS_YN,
+					FLR_HGHT_TYP_GB_CD,
+					ELCTR_PWR_TYP_GB_CD,
+					INTNL_STRCTR_TYP_CD,
+					BULT_IN_YN,
+					MOV_IN_REPRT_PSBL_YN,
+					
+					CITY_PLAN_YN,
+					BLD_CNFRM_ISSUE_YN,
+					LND_DEAL_CNFRM_APPL_YN,
+					ENTRNCE_ROAD_EXSTS_YN,
+					OPTION_EXSTS_YN,
+					REG_MEM_SEQNO
+				)
+			VALUES
+				(
+					#{estBrkMemOfcSeqno},
+					#{prptRegNo},
+					#{estateTypGbCd},
+					#{estateTypCd},
+					#{tranTypGbCd},
+					#{dealAmt},
+					#{dealAmtDiscsnPsblYn},
+					#{dpstAmt},
+					#{montRentAmt},
+					#{existngLeaseExstsYn},
+					
+					#{crntDpstAmt},
+					#{crntMontRentAmt},
+					#{keyMonExstsYn},
+					#{keyMonAmt},
+					#{prmmAmt},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(cmpltExpctDate)">
+					STR_TO_DATE( #{cmpltExpctDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+					#{addr},
+					#{dtlAddr},
+					#{addrShortNm},
+					#{lat},
+					#{lng},
+					#{mapDispYn},
+					#{tmpAddrYn},
+					#{unregistYn},
+					
+					#{flr},
+					#{allFlr},
+					#{minFlr},
+					#{maxFlr},
+					#{splyArea},
+					#{prvArea},
+					
+					#{lndArea},
+					#{totFlrArea},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(useCnfrmDate)">
+					STR_TO_DATE( #{useCnfrmDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+					#{bldUsageGbCd},
+					#{suggstnBldUsageGbCd},
+					#{lndCrntUsageGbCd},
+					#{psblMovDayTypCd},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(psblMovDate)">
+					STR_TO_DATE( #{psblMovDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+					#{monMntnceCost},
+					#{loanGbCd},
+					
+					#{loanAmt},
+					#{parkingPsblYn},
+					#{parkingCost},
+					#{roomCnt},
+					#{bathRoomCnt},
+					#{crntSectrGbCd},
+					#{suggstnSectrGbCd},
+					#{bldDirctnGbCd},
+					#{heatKindGbCd},
+					#{wghtPerPy},
+					
+					#{elvFcltExstsYn},
+					#{frghtElvExstsYn},
+					#{intrrYn},
+					#{dockExstsYn},
+					#{hoistExstsYn},
+					#{flrHghtTypGbCd},
+					#{elctrPwrTypGbCd},
+					#{intnlStrctrTypCd},
+					#{bultInYn},
+					#{movInReprtPsblYn},
+					
+					#{cityPlanYn},
+					#{bldCnfrmIssueYn},
+					#{lndDealCnfrmApplYn},
+					#{entrnceRoadExstsYn},
+					#{optionExstsYn},
+					#{regMemSeqno}
+				)
+		]]>
+		<selectKey keyProperty="prptSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( PRPT_SEQNO ) AS PRPT_SEQNO
+			FROM
+				TB_PROPERTY
+		</selectKey>
+	</insert>
+	
+	<!-- 매물 수정 ( 1 ~ 4 단계 정보 ) -->
+	<update id="updateProperty" parameterType="PropertyVO">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY
+			SET
+				ESTATE_TYP_GB_CD = #{estateTypGbCd},
+				ESTATE_TYP_CD = #{estateTypCd},
+				TRAN_TYP_GB_CD = #{tranTypGbCd},
+				DEAL_AMT = #{dealAmt},
+				DEAL_AMT_DISCSN_PSBL_YN = #{dealAmtDiscsnPsblYn},
+				DPST_AMT = #{dpstAmt},
+				MONT_RENT_AMT = #{montRentAmt},
+				EXISTNG_LEASE_EXSTS_YN = #{existngLeaseExstsYn},
+				
+				CRNT_DPST_AMT = #{crntDpstAmt},
+				CRNT_MONT_RENT_AMT = #{crntMontRentAmt},
+				KEY_MON_EXSTS_YN = #{keyMonExstsYn},
+				KEY_MON_AMT = #{keyMonAmt},
+				PRMM_AMT = #{prmmAmt},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(cmpltExpctDate)">
+				CMPLT_EXPCT_DATE = STR_TO_DATE( #{cmpltExpctDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+				CMPLT_EXPCT_DATE = NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+				ADDR = #{addr},
+				DTL_ADDR = #{dtlAddr},
+				ADDR_SHORT_NM = #{addrShortNm},
+				LAT = #{lat},
+				LNG = #{lng},
+				MAP_DISP_YN = #{mapDispYn},
+				TMP_ADDR_YN = #{tmpAddrYn},
+				UNREGIST_YN = #{unregistYn},
+				
+				FLR = #{flr},
+				ALL_FLR = #{allFlr},
+				MIN_FLR = #{minFlr},
+				MAX_FLR = #{maxFlr},
+				SPLY_AREA = #{splyArea},
+				PRV_AREA = #{prvArea},
+				LND_AREA = #{lndArea},
+				TOT_FLR_AREA = #{totFlrArea},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(useCnfrmDate)">
+				USE_CNFRM_DATE = STR_TO_DATE( #{useCnfrmDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+				USE_CNFRM_DATE = NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+				BLD_USAGE_GB_CD = #{bldUsageGbCd},
+				SUGGSTN_BLD_USAGE_GB_CD = #{suggstnBldUsageGbCd},
+				LND_CRNT_USAGE_GB_CD = #{lndCrntUsageGbCd},
+				PSBL_MOV_DAY_TYP_CD = #{psblMovDayTypCd},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(psblMovDate)">
+				PSBL_MOV_DATE = STR_TO_DATE( #{psblMovDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+				PSBL_MOV_DATE = NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+				MON_MNTNCE_COST = #{monMntnceCost},
+				LOAN_GB_CD = #{loanGbCd},
+				
+				LOAN_AMT = #{loanAmt},
+				PARKING_PSBL_YN = #{parkingPsblYn},
+				PARKING_COST = #{parkingCost},
+				ROOM_CNT = #{roomCnt},
+				BATH_ROOM_CNT = #{bathRoomCnt},
+				CRNT_SECTR_GB_CD = #{crntSectrGbCd},
+				SUGGSTN_SECTR_GB_CD = #{suggstnSectrGbCd},
+				BLD_DIRCTN_GB_CD = #{bldDirctnGbCd},
+				HEAT_KIND_GB_CD = #{heatKindGbCd},
+				WGHT_PER_PY = #{wghtPerPy},
+				
+				ELV_FCLT_EXSTS_YN = #{elvFcltExstsYn},
+				FRHGT_ELV_EXSTS_YN = #{frghtElvExstsYn},
+				INTRR_YN = #{intrrYn},
+				DOCK_EXSTS_YN = #{dockExstsYn},
+				HOIST_EXSTS_YN = #{hoistExstsYn},
+				FLR_HGHT_TYP_GB_CD = #{flrHghtTypGbCd},
+				ELCTR_PWR_TYP_GB_CD = #{elctrPwrTypGbCd},
+				INTNL_STRCTR_TYP_CD = #{intnlStrctrTypCd},
+				BULT_IN_YN = #{bultInYn},
+				MOV_IN_REPRT_PSBL_YN = #{movInReprtPsblYn},
+				
+				CITY_PLAN_YN = #{cityPlanYn},
+				BLD_CNFRM_ISSUE_YN = #{bldCnfrmIssueYn},
+				LND_DEAL_CNFRM_APPL_YN = #{lndDealCnfrmApplYn},
+				ENTRNCE_ROAD_EXSTS_YN = #{entrnceRoadExstsYn},
+		]]>
+			<if test='fromAdminYn =="Y"'>
+		<![CDATA[
+				/* 관리자에 의한 수정인 경우 ( 최초 수정일때만 관리자 승인일시 갱신 ) */
+				ADMIN_CNFRM_DTTM = CASE WHEN ADMIN_CNFRM_YN = 'N' THEN NOW() ELSE ADMIN_CNFRM_DTTM END,
+				ADMIN_CNFRM_YN = 'Y',
+		]]>
+			</if>
+		<![CDATA[
+				OPTION_EXSTS_YN = #{optionExstsYn}
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+		]]>
+			<if test='deniedExprDateYn =="N"'>
+		<![CDATA[
+				AND COALESCE( ADMIN_CNFRM_DTTM, REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )		/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+		]]>
+			</if>
+	</update>
+	
+	<!-- 매물 관리비유형 전체삭제 -->
+	<delete id="removeAllPropertyMaintenanceTyps" parameterType="Long">
+		<![CDATA[
+			DELETE FROM
+				TB_PROPERTY_MAINTENANCE_TYPS
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</delete>
+	
+	<!-- 매물 관리비유형 등록 -->
+	<insert id="registerPropertyMaintenanceTyps" parameterType="PropertyVO">
+		<![CDATA[
+			INSERT INTO TB_PROPERTY_MAINTENANCE_TYPS
+				(
+					PRPT_SEQNO,
+					MNTNCE_COST_TYP_CD
+				)
+			VALUES
+				(
+					#{prptSeqno},
+					#{mntnceCostTypCd}
+				)
+		]]>
+	</insert>
+		
+	<!-- 매물 옵션유형 전체삭제 -->
+	<delete id="removeAllPropertyOptionTyps" parameterType="Long">
+		<![CDATA[
+			DELETE FROM
+				TB_PROPERTY_OPTION_TYPS
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</delete>
+	
+	<!-- 매물 옵션유형 등록 -->
+	<insert id="registerPropertyOptionTyps" parameterType="PropertyOptionVO">
+		<![CDATA[
+			INSERT INTO TB_PROPERTY_OPTION_TYPS
+				(
+					PRPT_SEQNO,
+					OPTION_ITEM_TYP_GB_CD,
+					OPTION_ITEM_TYP_CD
+				)
+			VALUES
+				(
+					#{prptSeqno},
+					#{optionItemTypGbCd},
+					#{optionItemTypCd}
+				)
+		]]>
+	</insert>
+	
+	<!-- 매물 사진정보 등록 -->
+	<insert id="registerPropertyPhotoInfo" parameterType="PropertyPhotoVO">
+		<![CDATA[
+			INSERT INTO TB_PROPERTY_PHOTO_INFO
+				(
+					PRPT_SEQNO,
+					SMPL_SMR_DSCR,
+					DTL_EXPLNTN_DSCR,
+					MATTER_PORT_LINK_URL,
+					PRVT_MEMO_DSCR
+				)
+			VALUES
+				(
+					#{prptSeqno},
+					#{smplSmrDscr},
+					#{dtlExplntnDscr},
+					#{matterPortLinkUrl},
+					#{prvtMemoDscr}
+				)
+		]]>
+	</insert>
+	
+	<!-- 매물 사진정보 업데이트 -->
+	<update id="updatePropertyPhotoInfo" parameterType="PropertyPhotoVO">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY_PHOTO_INFO
+			SET
+				SMPL_SMR_DSCR = #{smplSmrDscr},
+				DTL_EXPLNTN_DSCR = #{dtlExplntnDscr},
+				PRVT_MEMO_DSCR = #{prvtMemoDscr}
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</update>
+	
+	<!-- 관리자 - 매물 사진정보 업데이트 -->
+	<update id="updatePropertyPhotoInfoFromAdmin" parameterType="PropertyPhotoVO">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY_PHOTO_INFO
+			SET
+				SMPL_SMR_DSCR = #{smplSmrDscr},
+				DTL_EXPLNTN_DSCR = #{dtlExplntnDscr},
+				MATTER_PORT_LINK_URL = #{matterPortLinkUrl}
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</update>
+		
+	<!-- 매물 대표사진 삭제처리 -->
+	<update id="removePropertyRepPhoto" parameterType="Long">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY_PHOTOS
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND REP_PHOTO_YN = 'Y'
+		]]>
+	</update>
+	
+	<!-- 매물 사진 등록 -->
+	<insert id="registerPropertyPhoto" parameterType="PropertyPhotoVO">
+		<![CDATA[
+			INSERT INTO TB_PROPERTY_PHOTOS
+				(
+					PRPT_SEQNO,
+					UPLOAD_FILE_NM,
+					SAVE_FILE_NM,
+					FILE_URL,
+					REP_PHOTO_YN
+				)
+			VALUES
+				(
+					#{prptSeqno},
+					#{uploadFileNm},
+					#{saveFileNm},
+					#{fileUrl},
+					#{repPhotoYn}
+				)
+		]]>
+	</insert>
+		
+	<!-- 매물사진 삭제처리 -->
+	<update id="deletePropertyPhoto" parameterType="PropertyPhotoVO">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY_PHOTOS
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND FILE_URL = #{fileUrl}
+		]]>
+	</update>
+
+	<!-- 매물시퀀스 유효성 검증 -->
+	<select id="isAvailProperty" parameterType="Long" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_PROPERTY
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 일반회원 등록 매물시퀀스 유효성 검증 -->
+	<select id="isAvailMembersProperty" parameterType="Long" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				ADMIN_CNFRM_YN,
+				CASE
+					WHEN ADMIN_CNFRM_DTTM IS NOT NULL AND ADMIN_CNFRM_DTTM < DATE_SUB( NOW(), INTERVAL 30 DAY )
+						THEN 'Y'
+					ELSE
+						'N'
+				END AS EXPR_YN,
+				DEAL_STAT_GB_CD,
+				REG_MEM_SEQNO AS MEM_SEQNO
+			FROM
+				TB_PROPERTY
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = 0
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+
+	<!-- 관심매물 등록여부 확인 -->
+	<select id="isExistsFavProperty" parameterType="PropertyVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_FAVORITE_PROPERTY
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</select>
+	
+	<!-- 관심매물 등록 -->
+	<insert id="registerFavProperty" parameterType="PropertyVO">
+		<![CDATA[
+			INSERT INTO TB_FAVORITE_PROPERTY
+				(
+					MEM_SEQNO,
+					PRPT_SEQNO
+				)
+			VALUES
+				(
+					#{regMemSeqno},
+					#{prptSeqno}
+				)
+		]]>
+	</insert>
+	
+	<!-- 관심매물 해제 -->
+	<delete id="releaseFavProperty" parameterType="PropertyVO">
+		<![CDATA[
+			DELETE FROM
+				TB_FAVORITE_PROPERTY
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</delete>
+
+	<!-- 중개사 매물목록 조회 ( 중개사무소 상세페이지 ) -->
+	<select id="getEstBrkOfcPropertyList" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				T.PRPT_SEQNO,
+				T.PRPT_REG_NO,
+				T.ESTATE_TYP_GB_CD,
+				T.ESTATE_TYP_GB_NM,
+				T.ESTATE_TYP_CD,
+				T.ESTATE_TYP_NM,
+				T.TRAN_TYP_GB_CD,
+				T.TRAN_TYP_GB_NM,
+				T.COST,
+				T.MONT_RENT_AMT,
+				T.SPLY_AREA,
+				T.PRV_AREA,
+				T.LND_AREA,
+				T.TOT_FLR_AREA,
+				T.FLR,
+				T.SMPL_SMR_DSCR,
+				T.LAT,
+				T.LNG,
+				T.ADDR_SHORT_NM,
+				T.REP_IMG_URL,
+				CASE
+					WHEN T.FAV_CNT = 0
+						THEN 'N'
+					ELSE
+						'Y'
+				END AS FAV_YN
+			FROM
+				(
+					SELECT
+						P.PRPT_SEQNO,
+						P.PRPT_REG_NO,
+						P.ESTATE_TYP_GB_CD,
+						C1.ITEM_CD_NM AS ESTATE_TYP_GB_NM,
+						P.ESTATE_TYP_CD,
+						C2.ITEM_CD_NM AS ESTATE_TYP_NM,
+						P.TRAN_TYP_GB_CD,
+						C3.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+						/* 거래유형이 매매, 전세, 전매인 경우 거래금액, 이외에는 보증금액 */
+						CASE
+							WHEN P.TRAN_TYP_GB_CD IN ( 'TRADE', 'CHARTER', 'RESALE' )
+								THEN P.DEAL_AMT
+							ELSE
+								P.DPST_AMT
+						END AS COST,
+						P.MONT_RENT_AMT,
+						P.SPLY_AREA,
+						P.PRV_AREA,
+						P.LND_AREA,
+						P.TOT_FLR_AREA,
+						/* 매물유형이 토지/임야, 단독공장인 경우 대지면적, 이외에는 공급면적으로 SORTING */
+						CASE
+							WHEN P.ESTATE_TYP_CD IN ( 'LND', 'FTR' )
+								THEN P.LND_AREA
+							ELSE
+								P.SPLY_AREA
+						END AS SORT_AREA,
+						P.FLR,
+						COALESCE( PI.SMPL_SMR_DSCR, '' ) AS SMPL_SMR_DSCR,
+						P.LAT,
+						P.LNG,
+						P.ADDR_SHORT_NM,
+						COALESCE(
+									(
+										SELECT
+											FILE_URL
+										FROM
+											TB_PROPERTY_PHOTOS
+										WHERE
+											PRPT_SEQNO = P.PRPT_SEQNO
+											AND DEL_YN = 'N'
+											AND REP_PHOTO_YN = 'Y'
+									), ''
+						) AS REP_IMG_URL,
+						(
+							SELECT
+								COUNT(1)
+							FROM
+								TB_FAVORITE_PROPERTY
+							WHERE
+								PRPT_SEQNO = P.PRPT_SEQNO
+								AND MEM_SEQNO = #{memSeqno}
+						) AS FAV_CNT,
+						P.REG_DTTM
+					FROM
+						TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EB
+							INNER JOIN TB_MEMBER M
+								ON EB.MEM_SEQNO = M.MEM_SEQNO
+							INNER JOIN TB_PROPERTY P
+								ON EB.EST_BRK_MEM_OFC_SEQNO = P.EST_BRK_MEM_OFC_SEQNO
+							LEFT OUTER JOIN TB_PROPERTY_PHOTO_INFO PI
+								ON P.PRPT_SEQNO = PI.PRPT_SEQNO
+							INNER JOIN TB_COMN_CD C1
+								ON C1.COMN_CD = 'ESTATE_TYP_GB_CD'
+								AND P.ESTATE_TYP_GB_CD = C1.ITEM_CD
+							INNER JOIN TB_COMN_CD C2
+								ON C2.COMN_CD = 'ESTATE_TYP_CD'
+								AND P.ESTATE_TYP_CD = C2.ITEM_CD
+							INNER JOIN TB_COMN_CD C3
+								ON C3.COMN_CD = 'TRAN_TYP_GB_CD'
+								AND P.TRAN_TYP_GB_CD = C3.ITEM_CD
+					WHERE
+						EB.EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+						AND M.DEL_YN = 'N'
+						AND M.ACTV_STAT_GB_CD != 'WDR'
+						AND M.MEM_TYP_CD = 'E'													/* 중개사회원 */
+						AND M.ACNT_APRV_STAT_CD = 'Y'
+						AND P.DEL_YN = 'N'
+						AND P.ADMIN_CNFRM_YN = 'Y'
+						AND P.DEAL_STAT_GB_CD = 'ING'											/* 진행중 매물만 */
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(tranTypGbCd)">
+						AND P.TRAN_TYP_GB_CD = #{tranTypGbCd}
+			</if>
+		<![CDATA[
+						AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )		/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+				) T
+		]]>
+			<choose>
+				<when test="sortItem == 'DATE'">
+					<choose>
+						<when test="sortTyp == 'ASC'">
+			ORDER BY
+				T.REG_DTTM
+						</when>
+						<when test="sortTyp == 'DESC'">
+			ORDER BY
+				T.REG_DTTM DESC
+						</when>
+					</choose>
+				</when>
+				<when test="sortItem == 'COST'">
+					<choose>
+						<when test="sortTyp == 'ASC'">
+			ORDER BY
+				T.COST
+						</when>
+						<when test="sortTyp == 'DESC'">
+			ORDER BY
+				T.COST DESC
+						</when>
+					</choose>
+				</when>
+				<when test="sortItem == 'AREA'">
+					<choose>
+						<when test="sortTyp == 'ASC'">
+			ORDER BY
+				T.SORT_AREA
+						</when>
+						<when test="sortTyp == 'DESC'">
+			ORDER BY
+				T.SORT_AREA DESC
+						</when>
+					</choose>
+				</when>
+			</choose>
+	</select>
+
+	<!-- 중개사 최근 매물목록 조회 ( 30일 이내기준, 3건까지 ) -->
+	<select id="getEstBrkOfcPropertyRecent3List" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				P.PRPT_SEQNO,
+				LPAD( P.PRPT_SEQNO, 6, '0' ) AS PRPT_NO,
+				P.PRPT_REG_NO,
+				P.ESTATE_TYP_GB_CD,
+				C1.ITEM_CD_NM AS ESTATE_TYP_GB_NM,
+				P.ESTATE_TYP_CD,
+				C2.ITEM_CD_NM AS ESTATE_TYP_NM,
+				P.TRAN_TYP_GB_CD,
+				C3.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				/* 거래유형이 매매, 전세, 전매인 경우 거래금액, 이외에는 보증금액 */
+				CASE
+					WHEN P.TRAN_TYP_GB_CD IN ( 'TRADE', 'CHARTER', 'RESALE' )
+						THEN P.DEAL_AMT
+					ELSE
+						P.DPST_AMT
+				END AS COST,
+				P.MONT_RENT_AMT,
+				P.SPLY_AREA,
+				P.PRV_AREA,
+				P.LND_AREA,
+				P.TOT_FLR_AREA,
+				P.FLR,
+				COALESCE( PI.SMPL_SMR_DSCR, '' ) AS SMPL_SMR_DSCR,
+				P.LAT,
+				P.LNG,
+				P.ADDR_SHORT_NM,
+				COALESCE(
+							(
+								SELECT
+									FILE_URL
+								FROM
+									TB_PROPERTY_PHOTOS
+								WHERE
+									PRPT_SEQNO = P.PRPT_SEQNO
+									AND DEL_YN = 'N'
+									AND REP_PHOTO_YN = 'Y'
+							), ''
+				) AS REP_IMG_URL
+			FROM
+				TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EB
+					INNER JOIN TB_MEMBER M
+						ON EB.MEM_SEQNO = M.MEM_SEQNO
+					INNER JOIN TB_PROPERTY P
+						ON EB.EST_BRK_MEM_OFC_SEQNO = P.EST_BRK_MEM_OFC_SEQNO
+					LEFT OUTER JOIN TB_PROPERTY_PHOTO_INFO PI
+						ON P.PRPT_SEQNO = PI.PRPT_SEQNO
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'ESTATE_TYP_GB_CD'
+						AND P.ESTATE_TYP_GB_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'ESTATE_TYP_CD'
+						AND P.ESTATE_TYP_CD = C2.ITEM_CD
+					INNER JOIN TB_COMN_CD C3
+						ON C3.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND P.TRAN_TYP_GB_CD = C3.ITEM_CD
+			WHERE
+				EB.EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+		]]>
+			<if test="exceptPrptSeqno != 0">
+				AND P.PRPT_SEQNO != #{exceptPrptSeqno}
+			</if>
+		<![CDATA[
+				AND M.DEL_YN = 'N'
+				AND M.ACTV_STAT_GB_CD != 'WDR'
+				AND M.MEM_TYP_CD = 'E'													/* 중개사회원 */
+				AND M.ACNT_APRV_STAT_CD = 'Y'
+				AND P.DEL_YN = 'N'
+				AND P.ADMIN_CNFRM_YN = 'Y'
+				AND P.DEAL_STAT_GB_CD = 'ING'											/* 진행중 매물만 */
+				AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+			ORDER BY
+				P.REG_DTTM DESC, P.PRPT_SEQNO DESC
+			LIMIT 3
+		]]>
+	</select>
+	
+	<!-- 매물 상세정보 조회 -->
+	<select id="getPropertyDtlItem" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				P.PRPT_SEQNO,
+				LPAD( P.PRPT_SEQNO, 6, '0' ) AS PRPT_NO,
+				CASE
+					WHEN (
+							SELECT
+								COUNT(1)
+							FROM
+								TB_FAVORITE_PROPERTY
+							WHERE
+								PRPT_SEQNO = P.PRPT_SEQNO
+								AND MEM_SEQNO = #{memSeqno}
+					) > 0
+						THEN 'Y'
+					ELSE
+						'N'
+				END AS FAV_YN,
+				P.ADDR,
+				P.ADDR_SHORT_NM,
+				COALESCE( P.UNREGIST_YN, '' ) AS UNREGIST_YN,
+				P.LAT,
+				P.LNG,
+				P.ESTATE_TYP_GB_CD,
+				C1.ITEM_CD_NM AS ESTATE_TYP_GB_NM,
+				P.ESTATE_TYP_CD,
+				C2.ITEM_CD_NM AS ESTATE_TYP_NM,
+				P.TRAN_TYP_GB_CD,
+				C3.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				CASE
+					WHEN P.TRAN_TYP_GB_CD = 'TRADE'
+						THEN '매매가'
+					WHEN P.TRAN_TYP_GB_CD = 'CHARTER'
+						THEN '전세가'
+					WHEN P.TRAN_TYP_GB_CD = 'RESALE'
+						THEN '전매가'
+					ELSE
+						'임대가'
+				END AS COST_NM,
+				/* 거래유형이 매매, 전세, 전매인 경우 거래금액, 이외에는 보증금액 */
+				CASE
+					WHEN P.TRAN_TYP_GB_CD IN ( 'TRADE', 'CHARTER', 'RESALE' )
+						THEN P.DEAL_AMT
+					ELSE
+						P.DPST_AMT
+				END AS COST,
+				P.KEY_MON_EXSTS_YN,
+				P.KEY_MON_AMT,
+				P.PRMM_AMT,
+				P.DEAL_AMT_DISCSN_PSBL_YN,
+				P.MONT_RENT_AMT,
+				CASE
+					WHEN P.ESTATE_TYP_CD = 'BLD'			/* 매물구분이 건물이면 '연면적' */
+						THEN '연'
+					WHEN P.ESTATE_TYP_CD = 'LND'			/* 매물구분이 토지/임대면 '대지면적' */
+						THEN '대지'
+					ELSE
+						'전용'
+				END AS DISP_AREA_NM,
+				CASE
+					WHEN P.ESTATE_TYP_CD = 'BLD'			/* 매물구분이 건물이면 '연면적' */
+						THEN P.TOT_FLR_AREA
+					WHEN P.ESTATE_TYP_CD = 'LND'			/* 매물구분이 토지/임대면 '대지면적' */
+						THEN P.LND_AREA
+					ELSE
+						P.PRV_AREA
+				END AS DISP_AREA,
+				P.SPLY_AREA,
+				P.PRV_AREA,
+				P.LND_AREA,
+				P.TOT_FLR_AREA,
+				P.FLR,
+				P.ALL_FLR,
+				P.MIN_FLR,
+				P.MAX_FLR,
+				DATE_FORMAT( P.USE_CNFRM_DATE, '%Y' ) AS USE_CNFRM_YEAR,
+				DATE_FORMAT( P.USE_CNFRM_DATE, '%Y.%m.%d' ) AS USE_CNFRM_DATE,
+				P.MON_MNTNCE_COST,
+				PP.MATTER_PORT_LINK_URL,
+				COALESCE(
+						(
+							SELECT
+								GROUP_CONCAT( C.ITEM_CD_NM SEPARATOR ', ' )
+							FROM
+								TB_PROPERTY_MAINTENANCE_TYPS PMT
+									INNER JOIN TB_COMN_CD C
+										ON C.COMN_CD = 'MNTNCE_COST_TYP_CD'
+										AND PMT.MNTNCE_COST_TYP_CD = C.ITEM_CD
+							WHERE
+								PMT.PRPT_SEQNO = P.PRPT_SEQNO
+						), ''
+				) AS MNTNCE_ITEM_DSCR,
+				C4.ITEM_CD_NM AS LOAN_GB_NM,
+				P.EXISTNG_LEASE_EXSTS_YN,
+				P.CRNT_DPST_AMT,
+				P.CRNT_MONT_RENT_AMT,
+				CASE
+					WHEN P.PSBL_MOV_DAY_TYP_CD = 'DISCSN'
+						THEN 'Y'
+					ELSE
+						'N'
+				END AS MOV_DATE_DISCSN_PSBL_YN,
+				COALESCE( DATE_FORMAT( P.PSBL_MOV_DATE, '%Y.%m.%d' ), '' ) AS PSBL_MOV_DATE,
+				COALESCE( C5.ITEM_CD_NM, '' ) AS CRNT_SECTR_GB_NM,
+				COALESCE( C6.ITEM_CD_NM, '' ) AS SUGGSTN_SECTR_GB_NM,
+				COALESCE( C14.ITEM_CD_NM, '' ) AS LND_CRNT_USAGE_GB_NM,
+				COALESCE( C7.ITEM_CD_NM, '' ) AS BLD_DIRCTN_GB_NM,
+				COALESCE( C8.ITEM_CD_NM, '' ) AS HEAT_KIND_GB_NM,
+				P.ROOM_CNT,
+				P.BATH_ROOM_CNT,
+				COALESCE( P.ELV_FCLT_EXSTS_YN, '' ) AS ELV_FCLT_EXSTS_YN,
+				COALESCE( P.FRHGT_ELV_EXSTS_YN, '' ) AS FRHGT_ELV_EXSTS_YN,
+				COALESCE( P.PARKING_PSBL_YN, '' ) AS PARKING_PSBL_YN,
+				P.PARKING_COST,
+				COALESCE( C9.ITEM_CD_NM, '' ) AS BLD_USAGE_GB_NM,
+				COALESCE( C10.ITEM_CD_NM, '' ) AS SUGGSTN_BLD_USAGE_GB_NM,
+				COALESCE( C11.ITEM_CD_NM, '' ) AS INTNL_STRCTR_TYP_NM,
+				COALESCE( P.BULT_IN_YN, '' ) AS BULT_IN_YN,
+				COALESCE( P.INTRR_YN, '' ) AS INTRR_YN,
+				P.WGHT_PER_PY,
+				COALESCE( C12.ITEM_CD_NM, '' ) AS FLR_HGHT_TYP_GB_NM,
+				COALESCE( C13.ITEM_CD_NM, '' ) AS ELCTR_PWR_TYP_GB_NM,
+				COALESCE( DATE_FORMAT( P.CMPLT_EXPCT_DATE, '%Y.%m.%d' ), '' ) AS CMPLT_EXPCT_DATE,
+				PP.DTL_EXPLNTN_DSCR,
+				P.EST_BRK_MEM_OFC_SEQNO
+			FROM
+				TB_PROPERTY P
+					INNER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EB
+						ON P.EST_BRK_MEM_OFC_SEQNO = EB.EST_BRK_MEM_OFC_SEQNO
+					INNER JOIN TB_MEMBER M
+						ON EB.MEM_SEQNO = M.MEM_SEQNO
+					INNER JOIN TB_PROPERTY_PHOTO_INFO PP
+						ON P.PRPT_SEQNO = PP.PRPT_SEQNO
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'ESTATE_TYP_GB_CD'
+						AND P.ESTATE_TYP_GB_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'ESTATE_TYP_CD'
+						AND P.ESTATE_TYP_CD = C2.ITEM_CD
+					INNER JOIN TB_COMN_CD C3
+						ON C3.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND P.TRAN_TYP_GB_CD = C3.ITEM_CD
+					INNER JOIN TB_COMN_CD C4
+						ON C4.COMN_CD = 'LOAN_GB_CD'
+						AND P.LOAN_GB_CD = C4.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C5
+						ON C5.COMN_CD = 'SECTR_GB_CD'
+						AND P.CRNT_SECTR_GB_CD = C5.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C6
+						ON C6.COMN_CD = 'SECTR_GB_CD'
+						AND P.SUGGSTN_SECTR_GB_CD = C6.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C7
+						ON C7.COMN_CD = 'BLD_DIRCTN_GB_CD'
+						AND P.BLD_DIRCTN_GB_CD = C7.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C8
+						ON C8.COMN_CD = 'HEAT_KIND_GB_CD'
+						AND P.HEAT_KIND_GB_CD = C8.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C9
+						ON C9.COMN_CD = 'BLD_USAGE_GB_CD'
+						AND P.BLD_USAGE_GB_CD = C9.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C10
+						ON C10.COMN_CD = 'BLD_USAGE_GB_CD'
+						AND P.SUGGSTN_BLD_USAGE_GB_CD = C10.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C11
+						ON C11.COMN_CD = 'INTNL_STRCTR_TYP_CD'
+						AND P.INTNL_STRCTR_TYP_CD = C11.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C12
+						ON C12.COMN_CD = 'FLR_HGHT_TYP_GB_CD'
+						AND P.FLR_HGHT_TYP_GB_CD = C12.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C13
+						ON C13.COMN_CD = 'ELCTR_PWR_TYP_GB_CD'
+						AND P.ELCTR_PWR_TYP_GB_CD = C13.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C14
+						ON C14.COMN_CD = 'LND_CRNT_USAGE_GB_CD'
+						AND P.LND_CRNT_USAGE_GB_CD = C14.ITEM_CD
+			WHERE
+				P.PRPT_SEQNO = #{prptSeqno}
+				AND M.DEL_YN = 'N'
+				AND M.ACTV_STAT_GB_CD != 'WDR'
+				AND M.ACNT_APRV_STAT_CD = 'Y'
+				AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )		/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+		]]>
+	</select>
+
+	<!-- 매물 사진 목록조회 -->
+	<select id="getPropertyPhotoList" parameterType="Long" resultType="PropertyPhotoVO">
+		<![CDATA[
+			SELECT
+				FILE_URL
+			FROM
+				TB_PROPERTY_PHOTOS
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+			ORDER BY
+				REP_PHOTO_YN DESC
+		]]>
+	</select>
+
+	<!-- 옵션 항목유형 목록 조회 -->
+	<select id="getOptionItemTypeList" parameterType="Long" resultType="PropertyOptionVO">
+		<![CDATA[
+			SELECT
+				G.OPTION_ITEM_TYP_GB_CD,
+				C.ITEM_CD_NM AS OPTION_ITEM_TYP_GB_NM
+			FROM
+				(
+					SELECT
+						OPTION_ITEM_TYP_GB_CD
+					FROM
+						TB_PROPERTY_OPTION_TYPS
+					WHERE
+						PRPT_SEQNO = #{prptSeqno}
+					GROUP BY
+						OPTION_ITEM_TYP_GB_CD
+				) G
+					INNER JOIN TB_COMN_CD C
+						ON C.COMN_CD = 'OPTION_ITEM_TYP_GB_CD'
+						AND G.OPTION_ITEM_TYP_GB_CD = C.ITEM_CD
+			ORDER BY
+				C.SORT_SERL
+		]]>
+	</select>
+
+	<!-- 옵션 상세항목 목록조회 -->
+	<select id="getOptionDtlList" parameterType="PropertyOptionVO" resultType="PropertyOptionVO">
+		<![CDATA[
+			SELECT
+				POT.OPTION_ITEM_TYP_CD,
+				C.ITEM_CD_NM AS OPTION_ITEM_TYP_NM
+			FROM
+				TB_PROPERTY_OPTION_TYPS POT
+					INNER JOIN TB_COMN_CD C
+						ON C.COMN_CD = 'OPTION_ITEM_TYP_CD'
+						AND POT.OPTION_ITEM_TYP_GB_CD = C.UP_ITEM_CD
+						AND POT.OPTION_ITEM_TYP_CD = C.ITEM_CD
+			WHERE
+				POT.PRPT_SEQNO = #{prptSeqno}
+				AND POT.OPTION_ITEM_TYP_GB_CD = #{optionItemTypGbCd}
+			ORDER BY
+				C.SORT_SERL
+		]]>
+	</select>
+	
+	<!-- 중개회원 - 내 매물 목록 조회 ( 페이징 ) -->
+	<select id="getEstBrkPropertyItems" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				L.ROWNUM,
+				L.PRPT_SEQNO,
+				L.PRPT_NO,
+				L.DEAL_STAT_GB_CD,
+				CASE
+					WHEN L.REG_DTTM >= DATE_SUB( NOW(), INTERVAL 30 DAY )
+						THEN 'N'
+					ELSE
+						'Y'
+				END AS REG_EXPR_YN,
+				L.ESTATE_TYP_CD,
+				C1.ITEM_CD_NM AS ESTATE_TYP_NM,
+				L.ADDR,
+				L.TRAN_TYP_GB_CD,
+				C2.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				L.SPLY_AREA,
+				L.PRV_AREA,
+				L.LND_AREA,
+				L.TOT_FLR_AREA,
+				L.DEAL_AMT,
+				L.DPST_AMT,
+				L.MONT_RENT_AMT,
+				L.PRVT_MEMO_DSCR,
+				L.REPR_IMG_URL,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_MEMBER M
+							INNER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+								ON M.MEM_SEQNO = EBM.MEM_SEQNO
+							INNER JOIN TB_PROPERTY P
+								ON EBM.EST_BRK_MEM_OFC_SEQNO = P.EST_BRK_MEM_OFC_SEQNO
+							INNER JOIN TB_PROPERTY_PHOTO_INFO PPI
+								ON P.PRPT_SEQNO = PPI.PRPT_SEQNO
+					WHERE
+						M.MEM_SEQNO = 15
+						AND M.MEM_TYP_CD = 'E'													/* 중개회원 */
+						AND P.DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(tranTypGbCd)">
+						AND P.TRAN_TYP_GB_CD = #{tranTypGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(estateTypCd)">
+						AND P.ESTATE_TYP_CD = #{estateTypCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+						AND (
+								LPAD( P.PRPT_SEQNO, 6, '0' ) LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								P.ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								PPI.PRVT_MEMO_DSCR LIKE CONCAT( '%', #{srchVal}, '%' )
+						)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchGbCd)">
+				<choose>
+					<when test='srchGbCd == "ING"'>
+						AND P.DEAL_STAT_GB_CD = 'ING'											/* 진행중 */
+						AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+					</when>
+					<when test='srchGbCd == "FIN"'>
+						AND P.DEAL_STAT_GB_CD = 'FIN'											/* 거래완료 */
+						AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+					</when>
+					<when test='srchGbCd == "HID"'>
+		<![CDATA[
+						/* 비공개 또는 등록한지 30일이 지난건 */
+						AND (
+								P.DEAL_STAT_GB_CD = 'PRV'
+								OR
+								P.REG_DTTM < DATE_SUB( NOW(), INTERVAL 30 DAY )
+						)
+		]]>
+					</when>
+				</choose>
+			</if>
+		<![CDATA[
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@RNUM := @RNUM + 1 AS ROWNUM,
+						T.PRPT_SEQNO,
+						T.PRPT_NO,
+						T.DEAL_STAT_GB_CD,
+						T.REG_DTTM,
+						T.ESTATE_TYP_CD,
+						T.ADDR,
+						T.TRAN_TYP_GB_CD,
+						T.SPLY_AREA,
+						T.PRV_AREA,
+						T.LND_AREA,
+						T.TOT_FLR_AREA,
+						T.DEAL_AMT,
+						T.DPST_AMT,
+						T.MONT_RENT_AMT,
+						T.PRVT_MEMO_DSCR,
+						T.REPR_IMG_URL
+					FROM
+						(
+							SELECT
+								@RNUM := 0 AS ROWNUM,
+								P.PRPT_SEQNO,
+								LPAD( P.PRPT_SEQNO, 6, '0' ) AS PRPT_NO,
+								P.DEAL_STAT_GB_CD,
+								P.REG_DTTM,
+								P.ESTATE_TYP_CD,
+								P.ADDR,
+								P.TRAN_TYP_GB_CD,
+								P.SPLY_AREA,
+								P.PRV_AREA,
+								P.LND_AREA,
+								P.TOT_FLR_AREA,
+								P.DEAL_AMT,
+								P.DPST_AMT,
+								P.MONT_RENT_AMT,
+								PPI.PRVT_MEMO_DSCR,
+								PP.FILE_URL AS REPR_IMG_URL
+							FROM
+								TB_MEMBER M
+									INNER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+										ON M.MEM_SEQNO = EBM.MEM_SEQNO
+									INNER JOIN TB_PROPERTY P
+										ON EBM.EST_BRK_MEM_OFC_SEQNO = P.EST_BRK_MEM_OFC_SEQNO
+									INNER JOIN TB_PROPERTY_PHOTO_INFO PPI
+										ON P.PRPT_SEQNO = PPI.PRPT_SEQNO
+									LEFT OUTER JOIN TB_PROPERTY_PHOTOS PP
+										ON P.PRPT_SEQNO = PP.PRPT_SEQNO
+										AND PP.REP_PHOTO_YN = 'Y'
+							WHERE
+								M.MEM_SEQNO = #{memSeqno}
+								AND M.MEM_TYP_CD = 'E'							/* 중개회원 */
+								AND P.DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(tranTypGbCd)">
+								AND P.TRAN_TYP_GB_CD = #{tranTypGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(estateTypCd)">
+								AND P.ESTATE_TYP_CD = #{estateTypCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+								AND (
+										LPAD( P.PRPT_SEQNO, 6, '0' ) LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										P.ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										PPI.PRVT_MEMO_DSCR LIKE CONCAT( '%', #{srchVal}, '%' )
+								)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchGbCd)">
+				<choose>
+					<when test='srchGbCd == "ING"'>
+								AND P.DEAL_STAT_GB_CD = 'ING'											/* 진행중 */
+								AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+					</when>
+					<when test='srchGbCd == "FIN"'>
+								AND P.DEAL_STAT_GB_CD = 'FIN'											/* 거래완료 */
+								AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+					</when>
+					<when test='srchGbCd == "HID"'>
+		<![CDATA[
+								/* 비공개 또는 등록한지 30일이 지난건 */
+								AND (
+										P.DEAL_STAT_GB_CD = 'PRV'
+										OR
+										P.REG_DTTM < DATE_SUB( NOW(), INTERVAL 30 DAY )
+								)
+		]]>
+					</when>
+				</choose>
+			</if>
+		<![CDATA[
+							ORDER BY
+								P.PRPT_SEQNO DESC
+							LIMIT #{edRnum}
+						) T
+					ORDER BY
+						T.PRPT_SEQNO DESC
+				) L
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'ESTATE_TYP_CD'
+						AND L.ESTATE_TYP_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND L.TRAN_TYP_GB_CD = C2.ITEM_CD
+			WHERE
+				L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.ROWNUM
+		]]>
+	</select>
+	
+	<!-- 매물 소유권 검증 -->
+	<select id="isMembersProperty" parameterType="PropertyVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_PROPERTY P
+					INNER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+						ON P.EST_BRK_MEM_OFC_SEQNO = EBM.EST_BRK_MEM_OFC_SEQNO
+			WHERE
+				P.PRPT_SEQNO = #{prptSeqno}
+				AND P.DEL_YN = 'N'
+				AND EBM.MEM_SEQNO = #{memSeqno}
+		]]>
+	</select>
+	
+	<!-- 중개회원 - 내 매물 삭제 -->
+	<update id="deleteEstBrkProperty" parameterType="Long">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</update>
+	
+	<!-- 중개회원 - 내 매물 등록만료 여부 조회 -->
+	<select id="getPropertyRegExprYn" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				DEAL_STAT_GB_CD,
+				CASE
+					WHEN P.REG_DTTM >= DATE_SUB( NOW(), INTERVAL 30 DAY )
+						THEN 'N'
+					ELSE
+						'Y'
+				END AS REG_EXPR_YN
+			FROM
+				TB_PROPERTY P
+					INNER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+						ON P.EST_BRK_MEM_OFC_SEQNO = EBM.EST_BRK_MEM_OFC_SEQNO
+			WHERE
+				P.PRPT_SEQNO = #{prptSeqno}
+				AND P.DEL_YN = 'N'
+				AND EBM.MEM_SEQNO = #{memSeqno}
+		]]>
+	</select>
+	
+	<!-- 매물 상태변경  -->
+	<update id="updatePropertyDealStatGbCd" parameterType="PropertyVO">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY
+			SET
+				DEAL_STAT_GB_CD = #{dealStatGbCd}
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 중개회원 - 등록만료 매물 재등록 -->
+	<update id="regenEstBrkProperty" parameterType="Long">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY
+			SET
+				REG_DTTM = NOW()
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 매물등록 1단계 필드정보 조회 -->
+	<select id="getEstBrkPrptStep1DataItem" parameterType="Long" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				ESTATE_TYP_GB_CD,
+				ESTATE_TYP_CD,
+				TRAN_TYP_GB_CD,
+				DEAL_AMT,
+				DEAL_AMT_DISCSN_PSBL_YN,
+				DPST_AMT,
+				MONT_RENT_AMT,
+				EXISTNG_LEASE_EXSTS_YN,
+				CRNT_DPST_AMT,
+				CRNT_MONT_RENT_AMT,
+				KEY_MON_EXSTS_YN,
+				KEY_MON_AMT,
+				PRMM_AMT,
+				COALESCE( DATE_FORMAT( CMPLT_EXPCT_DATE, '%Y%m%d' ), '' ) AS CMPLT_EXPCT_DATE
+			FROM
+				TB_PROPERTY
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+				AND COALESCE( ADMIN_CNFRM_DTTM, REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+		]]>
+	</select>
+	
+	<!-- 매물등록 2단계 필드정보 조회 -->
+	<select id="getEstBrkPrptStep2DataItem" parameterType="Long" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				ADDR,
+				DTL_ADDR,
+				ADDR_SHORT_NM,
+				LAT,
+				LNG,
+				MAP_DISP_YN,
+				TMP_ADDR_YN,
+				UNREGIST_YN
+			FROM
+				TB_PROPERTY
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+				AND COALESCE( ADMIN_CNFRM_DTTM, REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+		]]>
+	</select>
+	
+	<!-- 매물등록 3단계 필드정보 조회 -->
+	<select id="getEstBrkPrptStep3DataItem" parameterType="Long" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				FLR,
+				ALL_FLR,
+				MIN_FLR,
+				MAX_FLR,
+				SPLY_AREA,
+				PRV_AREA,
+				LND_AREA,
+				TOT_FLR_AREA,
+				COALESCE( DATE_FORMAT( USE_CNFRM_DATE, '%Y%m%d' ), '' ) AS USE_CNFRM_DATE,
+				BLD_USAGE_GB_CD,
+				SUGGSTN_BLD_USAGE_GB_CD,
+				LND_CRNT_USAGE_GB_CD,
+				PSBL_MOV_DAY_TYP_CD,
+				COALESCE( DATE_FORMAT( PSBL_MOV_DATE, '%Y%m%d' ), '' ) AS PSBL_MOV_DATE,
+				MON_MNTNCE_COST,
+				LOAN_GB_CD,
+				LOAN_AMT,
+				PARKING_PSBL_YN,
+				PARKING_COST
+			FROM
+				TB_PROPERTY
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+				AND COALESCE( ADMIN_CNFRM_DTTM, REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+		]]>
+	</select>
+	
+	<!-- 매물등록 4단계 필드정보 조회 -->
+	<select id="getEstBrkPrptStep4DataItem" parameterType="Long" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				ROOM_CNT,
+				BATH_ROOM_CNT,
+				CRNT_SECTR_GB_CD,
+				SUGGSTN_SECTR_GB_CD,
+				BLD_DIRCTN_GB_CD,
+				HEAT_KIND_GB_CD,
+				WGHT_PER_PY,
+				ELV_FCLT_EXSTS_YN,
+				FRHGT_ELV_EXSTS_YN,
+				INTRR_YN,
+				DOCK_EXSTS_YN,
+				HOIST_EXSTS_YN,
+				FLR_HGHT_TYP_GB_CD,
+				ELCTR_PWR_TYP_GB_CD,
+				INTNL_STRCTR_TYP_CD,
+				BULT_IN_YN,
+				MOV_IN_REPRT_PSBL_YN,
+				CITY_PLAN_YN,
+				BLD_CNFRM_ISSUE_YN,
+				LND_DEAL_CNFRM_APPL_YN,
+				ENTRNCE_ROAD_EXSTS_YN,
+				OPTION_EXSTS_YN
+			FROM
+				TB_PROPERTY
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+				AND COALESCE( ADMIN_CNFRM_DTTM, REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+		]]>
+	</select>
+	
+	<!-- 매물등록 5단계 필드정보 조회 -->
+	<select id="getEstBrkPrptStep5DataItem" parameterType="Long" resultType="PropertyPhotoVO">
+		<![CDATA[
+			SELECT
+				PPI.SMPL_SMR_DSCR,
+				PPI.DTL_EXPLNTN_DSCR,
+				PPI.PRVT_MEMO_DSCR
+			FROM
+				TB_PROPERTY P
+					INNER JOIN TB_PROPERTY_PHOTO_INFO PPI
+						ON P.PRPT_SEQNO = PPI.PRPT_SEQNO
+			WHERE
+				P.PRPT_SEQNO = #{prptSeqno}
+				AND P.DEL_YN = 'N'
+				AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )		/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+		]]>
+	</select>
+	
+	<!-- 선택 관리비 유형코드 목록조회 -->
+	<select id="getPrptMntnceCostTypList" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				MNTNCE_COST_TYP_CD
+			FROM
+				TB_PROPERTY_MAINTENANCE_TYPS
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</select>
+	
+	<!-- 선택 옵션유형 목록조회 -->
+	<select id="getPrptOptionTypList" parameterType="Long" resultType="PropertyOptionVO">
+		<![CDATA[
+			SELECT
+				OPTION_ITEM_TYP_GB_CD,
+				GROUP_CONCAT( OPTION_ITEM_TYP_CD ORDER BY OPTION_ITEM_TYP_CD SEPARATOR ',' ) AS OPTION_ITEM_TYP_CD
+			FROM
+				TB_PROPERTY_OPTION_TYPS
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+			GROUP BY
+				OPTION_ITEM_TYP_GB_CD
+			ORDER BY
+				OPTION_ITEM_TYP_GB_CD
+		]]>
+	</select>
+	
+	<!-- 매물사진 목록조회 ( 대표사진 포함 ) -->
+	<select id="getPrptPhotoList" parameterType="Long" resultType="PropertyPhotoVO">
+		<![CDATA[
+			SELECT
+				REP_PHOTO_YN,
+				FILE_URL
+			FROM
+				TB_PROPERTY_PHOTOS
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+
+	<!-- 일반회원 매물등록 -->
+	<insert id="registerMembersProperty" parameterType="PropertyVO">
+		<![CDATA[
+			INSERT INTO TB_PROPERTY
+				(
+					PRPT_REG_NO,
+					ESTATE_TYP_GB_CD,
+					ESTATE_TYP_CD,
+					TRAN_TYP_GB_CD,
+					DEAL_AMT,
+					DEAL_AMT_DISCSN_PSBL_YN,
+					DPST_AMT,
+					MONT_RENT_AMT,
+					EXISTNG_LEASE_EXSTS_YN,
+					
+					CRNT_DPST_AMT,
+					CRNT_MONT_RENT_AMT,
+					KEY_MON_EXSTS_YN,
+					KEY_MON_AMT,
+					PRMM_AMT,
+					CMPLT_EXPCT_DATE,
+					ADDR,
+					DTL_ADDR,
+					ADDR_SHORT_NM,
+					LAT,
+					LNG,
+					MAP_DISP_YN,
+					TMP_ADDR_YN,
+					UNREGIST_YN,
+					
+					PRV_AREA,
+					LND_AREA,
+					TOT_FLR_AREA,
+					ADMIN_CNFRM_YN,
+					REG_MEM_SEQNO
+				)
+			VALUES
+				(
+					#{prptRegNo},
+					#{estateTypGbCd},
+					#{estateTypCd},
+					#{tranTypGbCd},
+					#{dealAmt},
+					#{dealAmtDiscsnPsblYn},
+					#{dpstAmt},
+					#{montRentAmt},
+					#{existngLeaseExstsYn},
+					
+					#{crntDpstAmt},
+					#{crntMontRentAmt},
+					#{keyMonExstsYn},
+					#{keyMonAmt},
+					#{prmmAmt},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(cmpltExpctDate)">
+					STR_TO_DATE( #{cmpltExpctDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+					#{addr},
+					#{dtlAddr},
+					#{addrShortNm},
+					#{lat},
+					#{lng},
+					#{mapDispYn},
+					#{tmpAddrYn},
+					#{unregistYn},
+					
+					#{prvArea},
+					#{lndArea},
+					#{totFlrArea},
+					'N',
+					#{regMemSeqno}
+				)
+		]]>
+		<selectKey keyProperty="prptSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( PRPT_SEQNO ) AS PRPT_SEQNO
+			FROM
+				TB_PROPERTY
+		</selectKey>
+	</insert>
+	
+	<!-- 일반회원 - 내매물 목록조회 ( 페이징 ) -->
+	<select id="getMyPropertyList" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				L.PRPT_SEQNO,
+				LPAD( L.PRPT_SEQNO, 6, '0' ) AS PRPT_NO,
+				L.PRPT_REG_NO,
+				(
+					SELECT
+						FILE_URL
+					FROM
+						TB_PROPERTY_PHOTOS
+					WHERE
+						PRPT_SEQNO = L.PRPT_SEQNO
+						AND REP_PHOTO_YN = 'Y'
+						AND DEL_YN = 'N'
+				) AS REPR_IMG_URL,
+				L.ESTATE_TYP_GB_CD,
+				L.ESTATE_TYP_CD,
+				C1.ITEM_CD_NM AS ESTATE_TYP_NM,
+				L.ADDR,
+				L.DTL_ADDR,
+				L.SPLY_AREA,
+				L.PRV_AREA,
+				L.LND_AREA,
+				L.TOT_FLR_AREA,
+				L.TRAN_TYP_GB_CD,
+				C2.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				L.DEAL_AMT,
+				L.DPST_AMT,
+				L.MONT_RENT_AMT,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_PROPERTY
+					WHERE
+						REG_MEM_SEQNO = #{memSeqno}
+						AND DEL_YN = 'N'
+		]]>
+			<choose>
+				<when test='regStatGbCd == "R"'>
+						AND ADMIN_CNFRM_YN = 'N'
+				</when>
+				<when test='regStatGbCd == "F"'>
+						AND ADMIN_CNFRM_YN = 'Y'
+				</when>
+			</choose>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(tranTypGbCd)">
+						AND TRAN_TYP_GB_CD = #{tranTypGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(estateTypCd)">
+						AND ESTATE_TYP_CD = #{estateTypCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+						AND (
+								PRPT_REG_NO LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								DTL_ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+						)
+			</if>
+		<![CDATA[
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@RNUM := @RNUM + 1 AS ROWNUM,
+						T.PRPT_SEQNO,
+						T.PRPT_REG_NO,
+						T.ESTATE_TYP_GB_CD,
+						T.ESTATE_TYP_CD,
+						T.TRAN_TYP_GB_CD,
+						T.ADDR,
+						T.DTL_ADDR,
+						T.SPLY_AREA,
+						T.PRV_AREA,
+						T.LND_AREA,
+						T.TOT_FLR_AREA,
+						T.DEAL_AMT,
+						T.DPST_AMT,
+						T.MONT_RENT_AMT
+					FROM
+						(
+							SELECT
+								@RNUM := 0 AS ROWNUM,
+								PRPT_SEQNO,
+								PRPT_REG_NO,
+								ESTATE_TYP_GB_CD,
+								ESTATE_TYP_CD,
+								TRAN_TYP_GB_CD,
+								ADDR,
+								DTL_ADDR,
+								SPLY_AREA,
+								PRV_AREA,
+								LND_AREA,
+								TOT_FLR_AREA,
+								DEAL_AMT,
+								DPST_AMT,
+								MONT_RENT_AMT
+							FROM
+								TB_PROPERTY
+							WHERE
+								REG_MEM_SEQNO = #{memSeqno}
+								AND DEL_YN = 'N'
+		]]>
+			<choose>
+				<when test='regStatGbCd == "R"'>
+								AND ADMIN_CNFRM_YN = 'N'
+				</when>
+				<when test='regStatGbCd == "F"'>
+								AND ADMIN_CNFRM_YN = 'Y'
+				</when>
+			</choose>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(tranTypGbCd)">
+								AND TRAN_TYP_GB_CD = #{tranTypGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(estateTypCd)">
+								AND ESTATE_TYP_CD = #{estateTypCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+								AND (
+										PRPT_REG_NO LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										DTL_ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+								)
+			</if>
+		<![CDATA[
+							ORDER BY
+								PRPT_SEQNO DESC
+							LIMIT #{edRnum}
+						) T
+					ORDER BY
+						T.PRPT_SEQNO DESC
+				) L
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'ESTATE_TYP_CD'
+						AND L.ESTATE_TYP_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND L.TRAN_TYP_GB_CD = C2.ITEM_CD
+			WHERE
+				L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.ROWNUM
+		]]>
+	</select>
+	
+	<!-- 일반회원 내 매물 유효성 검증 ( 삭제된 매물 포함 ) -->
+	<select id="getMyPropertyInfo" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				ESTATE_TYP_GB_CD,
+				ESTATE_TYP_CD,
+				TRAN_TYP_GB_CD,
+				DEAL_STAT_GB_CD,
+				ADMIN_CNFRM_YN,
+				DEL_YN
+			FROM
+				TB_PROPERTY
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND REG_MEM_SEQNO = #{memSeqno}
+		]]>
+	</select>
+	
+	<!-- 일반회원 내 매물 삭제 -->
+	<update id="deleteMyPropertyItem" parameterType="PropertyVO">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND REG_MEM_SEQNO = #{memSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- Admin - 일반회원 매물 목록조회 ( 페이징 ) -->
+	<select id="getMembersPropertyList" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				L.PRPT_SEQNO,
+				LPAD( L.PRPT_SEQNO, 6, '0' ) AS PRPT_NO,
+				L.DEAL_STAT_GB_CD,
+				C1.ITEM_CD_NM AS DEAL_STAT_GB_NM,
+				COALESCE( L.MEM_NAME, '' ) AS MEM_NAME,
+				L.ESTATE_TYP_CD,
+				C2.ITEM_CD_NM AS ESTATE_TYP_NM,
+				L.ADDR,
+				L.DTL_ADDR,
+				L.TRAN_TYP_GB_CD,
+				C3.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				L.DEAL_AMT,
+				L.DPST_AMT,
+				L.MONT_RENT_AMT,
+				DATE_FORMAT( L.REG_DTTM, '%Y.%m.%d' ) AS REG_DT,
+				COALESCE( DATE_FORMAT( L.ADMIN_CNFRM_DTTM, '%Y.%m.%d' ), '' ) AS ADMIN_REG_DT,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_PROPERTY P
+							LEFT OUTER JOIN TB_MEMBER M
+								ON P.REG_MEM_SEQNO = M.MEM_SEQNO
+					WHERE
+						P.EST_BRK_MEM_OFC_SEQNO = 0
+						AND P.DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+				<choose>
+					<when test='srchDateType == "W"'>
+		<![CDATA[
+						/* 이번 주 */
+						AND (
+								DATE_FORMAT( P.REG_DTTM, '%Y%m%d' )
+									BETWEEN DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) - 1 ), '%Y%m%d' ) AND DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) + 5 ), '%Y%m%d' )
+						)
+		]]>
+					</when>
+					<when test='srchDateType == "M"'>
+		<![CDATA[
+						/* 이번 달 */
+						AND DATE_FORMAT( P.REG_DTTM, '%Y%m' ) = DATE_FORMAT( NOW(), '%Y%m' )
+		]]>
+					</when>
+					<when test='srchDateType == "Y"'>
+		<![CDATA[
+						/* 1년 */
+						AND DATE_FORMAT( P.REG_DTTM, '%Y%m%d' ) > DATE_FORMAT( DATE_SUB( NOW(), INTERVAL 365 DAY ), '%Y%m%d' )
+		]]>
+					</when>
+				</choose>
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(tranTypGbCdItems)">
+						AND P.TRAN_TYP_GB_CD IN (
+				<foreach collection="tranTypGbCdItems" item="tranTypGbCd" separator=",">
+								#{tranTypGbCd}
+				</foreach>
+						)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(dealStatGbCdItems)">
+						AND P.DEAL_STAT_GB_CD IN (
+				<foreach collection="dealStatGbCdItems" item="dealStatGbCd" separator=",">
+								#{dealStatGbCd}
+				</foreach>
+						)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(treatStatGbCd)">
+				<choose>
+					<when test='treatStatGbCd == "B"'>
+						AND P.ADMIN_CNFRM_YN = 'N'
+					</when>
+					<when test='treatStatGbCd == "A"'>
+						AND P.ADMIN_CNFRM_YN = 'Y'
+					</when>
+				</choose>
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+		<![CDATA[
+						AND (
+								LPAD( P.PRPT_SEQNO, 6, '0' ) LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								CONCAT( P.ADDR, ' ', P.DTL_ADDR ) LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								M.MEM_NAME LIKE CONCAT( '%', #{srchVal}, '%' )
+						)
+		]]>
+			</if>
+		<![CDATA[
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@RNUM := @RNUM + 1 AS ROWNUM,
+						T.PRPT_SEQNO,
+						T.DEAL_STAT_GB_CD,
+						T.MEM_NAME,
+						T.ESTATE_TYP_CD,
+						T.ADDR,
+						T.DTL_ADDR,
+						T.TRAN_TYP_GB_CD,
+						T.DEAL_AMT,
+						T.DPST_AMT,
+						T.MONT_RENT_AMT,
+						T.REG_DTTM,
+						T.ADMIN_CNFRM_DTTM
+					FROM
+						(
+							SELECT
+								@RNUM := 0 AS ROWNUM,
+								P.PRPT_SEQNO,
+								P.DEAL_STAT_GB_CD,
+								M.MEM_NAME,
+								P.ESTATE_TYP_CD,
+								P.ADDR,
+								P.DTL_ADDR,
+								P.TRAN_TYP_GB_CD,
+								P.DEAL_AMT,
+								P.DPST_AMT,
+								P.MONT_RENT_AMT,
+								P.REG_DTTM,
+								P.ADMIN_CNFRM_DTTM
+							FROM
+								TB_PROPERTY P
+									LEFT OUTER JOIN TB_MEMBER M
+										ON P.REG_MEM_SEQNO = M.MEM_SEQNO
+							WHERE
+								P.EST_BRK_MEM_OFC_SEQNO = 0
+								AND P.DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+				<choose>
+					<when test='srchDateType == "W"'>
+		<![CDATA[
+								/* 이번 주 */
+								AND (
+										DATE_FORMAT( P.REG_DTTM, '%Y%m%d' )
+											BETWEEN DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) - 1 ), '%Y%m%d' ) AND DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) + 5 ), '%Y%m%d' )
+								)
+		]]>
+					</when>
+					<when test='srchDateType == "M"'>
+		<![CDATA[
+								/* 이번 달 */
+								AND DATE_FORMAT( P.REG_DTTM, '%Y%m' ) = DATE_FORMAT( NOW(), '%Y%m' )
+		]]>
+					</when>
+					<when test='srchDateType == "Y"'>
+		<![CDATA[
+								/* 1년 */
+								AND DATE_FORMAT( P.REG_DTTM, '%Y%m%d' ) > DATE_FORMAT( DATE_SUB( NOW(), INTERVAL 365 DAY ), '%Y%m%d' )
+		]]>
+					</when>
+				</choose>
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(tranTypGbCdItems)">
+								AND P.TRAN_TYP_GB_CD IN (
+				<foreach collection="tranTypGbCdItems" item="tranTypGbCd" separator=",">
+										#{tranTypGbCd}
+				</foreach>
+								)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(dealStatGbCdItems)">
+								AND P.DEAL_STAT_GB_CD IN (
+				<foreach collection="dealStatGbCdItems" item="dealStatGbCd" separator=",">
+										#{dealStatGbCd}
+				</foreach>
+								)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(treatStatGbCd)">
+				<choose>
+					<when test='treatStatGbCd == "B"'>
+								AND P.ADMIN_CNFRM_YN = 'N'
+					</when>
+					<when test='treatStatGbCd == "A"'>
+								AND P.ADMIN_CNFRM_YN = 'Y'
+					</when>
+				</choose>
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+		<![CDATA[
+								AND (
+										LPAD( P.PRPT_SEQNO, 6, '0' ) LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										CONCAT( P.ADDR, ' ', P.DTL_ADDR ) LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										M.MEM_NAME LIKE CONCAT( '%', #{srchVal}, '%' )
+								)
+		]]>
+			</if>
+		<![CDATA[
+							ORDER BY
+								P.PRPT_SEQNO DESC
+							LIMIT #{edRnum}
+						) T
+					ORDER BY
+						T.PRPT_SEQNO DESC
+				) L
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'DEAL_STAT_GB_CD'
+						AND L.DEAL_STAT_GB_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'ESTATE_TYP_CD'
+						AND L.ESTATE_TYP_CD = C2.ITEM_CD
+					INNER JOIN TB_COMN_CD C3
+						ON C3.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND L.TRAN_TYP_GB_CD = C3.ITEM_CD
+			WHERE
+				L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.ROWNUM
+		]]>
+	</select>
+	
+	<!-- Admin - 일반회원 매물 목록조회 ( 엑셀 다운용 ) -->
+	<select id="getMembersPropertyExcelDownloadList" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				P.PRPT_SEQNO,
+				LPAD( P.PRPT_SEQNO, 6, '0' ) AS PRPT_NO,
+				P.DEAL_STAT_GB_CD,
+				C1.ITEM_CD_NM AS DEAL_STAT_GB_NM,
+				COALESCE( M.MEM_NAME, '' ) AS MEM_NAME,
+				P.ESTATE_TYP_CD,
+				C2.ITEM_CD_NM AS ESTATE_TYP_NM,
+				P.ADDR,
+				P.DTL_ADDR,
+				P.TRAN_TYP_GB_CD,
+				C3.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				P.DEAL_AMT,
+				P.DPST_AMT,
+				P.MONT_RENT_AMT,
+				DATE_FORMAT( P.REG_DTTM, '%Y.%m.%d' ) AS REG_DT,
+				COALESCE( DATE_FORMAT( P.ADMIN_CNFRM_DTTM, '%Y.%m.%d' ), '' ) AS ADMIN_TREAT_DT
+			FROM
+				TB_PROPERTY P
+					LEFT OUTER JOIN TB_MEMBER M
+						ON P.REG_MEM_SEQNO = M.MEM_SEQNO
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'DEAL_STAT_GB_CD'
+						AND P.DEAL_STAT_GB_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'ESTATE_TYP_CD'
+						AND P.ESTATE_TYP_CD = C2.ITEM_CD
+					INNER JOIN TB_COMN_CD C3
+						ON C3.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND P.TRAN_TYP_GB_CD = C3.ITEM_CD
+			WHERE
+				P.EST_BRK_MEM_OFC_SEQNO = 0
+				AND P.DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+				<choose>
+					<when test='srchDateType == "W"'>
+		<![CDATA[
+				/* 이번 주 */
+				AND (
+						DATE_FORMAT( P.REG_DTTM, '%Y%m%d' )
+							BETWEEN DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) - 1 ), '%Y%m%d' ) AND DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) + 5 ), '%Y%m%d' )
+				)
+		]]>
+					</when>
+					<when test='srchDateType == "M"'>
+		<![CDATA[
+				/* 이번 달 */
+				AND DATE_FORMAT( P.REG_DTTM, '%Y%m' ) = DATE_FORMAT( NOW(), '%Y%m' )
+		]]>
+					</when>
+					<when test='srchDateType == "Y"'>
+		<![CDATA[
+				/* 1년 */
+				AND DATE_FORMAT( P.REG_DTTM, '%Y%m%d' ) > DATE_FORMAT( DATE_SUB( NOW(), INTERVAL 365 DAY ), '%Y%m%d' )
+		]]>
+					</when>
+				</choose>
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(dealStatGbCd)">
+				AND P.DEAL_STAT_GB_CD = #{dealStatGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(tranTypGbCd)">
+				AND P.TRAN_TYP_GB_CD = #{tranTypGbCd}
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(treatStatGbCd)">
+				<choose>
+					<when test='treatStatGbCd == "B"'>
+				AND P.ADMIN_CNFRM_YN = 'N'
+					</when>
+					<when test='treatStatGbCd == "A"'>
+				AND P.ADMIN_CNFRM_YN = 'Y'
+					</when>
+				</choose>
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+		<![CDATA[
+				AND (
+						LPAD( P.PRPT_SEQNO, 6, '0' ) LIKE CONCAT( '%', #{srchVal}, '%' )
+						OR
+						CONCAT( P.ADDR, ' ', P.DTL_ADDR ) LIKE CONCAT( '%', #{srchVal}, '%' )
+						OR
+						M.MEM_NAME LIKE CONCAT( '%', #{srchVal}, '%' )
+				)
+		]]>
+			</if>
+		<![CDATA[
+			ORDER BY
+				P.PRPT_SEQNO DESC
+		]]>
+	</select>
+	
+	<!-- Admin - 일반회원 매물 삭제-->
+	<update id="deleteMembersPropertyItem" parameterType="Long">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- Admin - 일반회원/중개회원 매물 상세정보 조회( 수정용 ) -->
+	<select id="getMembersPropertyDtlItem" parameterType="Long" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				P.PRPT_SEQNO,
+				LPAD( P.PRPT_SEQNO, 6, '0' ) AS PRPT_NO,
+				P.ESTATE_TYP_GB_CD,
+				P.ESTATE_TYP_CD,
+				P.TRAN_TYP_GB_CD,
+				P.DEAL_AMT,
+				COALESCE( P.DEAL_AMT_DISCSN_PSBL_YN, '' ) AS DEAL_AMT_DISCSN_PSBL_YN,
+				P.DPST_AMT,
+				P.MONT_RENT_AMT,
+				COALESCE( P.EXISTNG_LEASE_EXSTS_YN, '' ) AS EXISTNG_LEASE_EXSTS_YN,
+				P.CRNT_DPST_AMT,
+				P.CRNT_MONT_RENT_AMT,
+				COALESCE( P.KEY_MON_EXSTS_YN, '' ) AS KEY_MON_EXSTS_YN,
+				P.KEY_MON_AMT,
+				P.PRMM_AMT,
+				COALESCE( DATE_FORMAT( P.CMPLT_EXPCT_DATE, '%Y%m%d' ), '' ) AS CMPLT_EXPCT_DATE,
+				P.ADDR,
+				COALESCE( P.DTL_ADDR, '' ) AS DTL_ADDR,
+				COALESCE( P.ADDR_SHORT_NM, '' ) AS ADDR_SHORT_NM,
+				P.LAT,
+				P.LNG,
+				COALESCE( P.MAP_DISP_YN, '' ) AS MAP_DISP_YN,
+				COALESCE( P.TMP_ADDR_YN, '' ) AS TMP_ADDR_YN,
+				COALESCE( P.UNREGIST_YN, '' ) AS UNREGIST_YN,
+				P.FLR,
+				P.ALL_FLR,
+				P.MIN_FLR,
+				P.MAX_FLR,
+				P.SPLY_AREA,
+				P.PRV_AREA,
+				P.LND_AREA,
+				P.TOT_FLR_AREA,
+				COALESCE( DATE_FORMAT( P.USE_CNFRM_DATE, '%Y%m%d' ), '' ) AS USE_CNFRM_DATE,
+				COALESCE( P.BLD_USAGE_GB_CD, '' ) AS BLD_USAGE_GB_CD,
+				COALESCE( P.SUGGSTN_BLD_USAGE_GB_CD, '' ) AS SUGGSTN_BLD_USAGE_GB_CD,
+				COALESCE( P.LND_CRNT_USAGE_GB_CD, '' ) AS LND_CRNT_USAGE_GB_CD,
+				COALESCE( P.PSBL_MOV_DAY_TYP_CD, '' ) AS PSBL_MOV_DAY_TYP_CD,
+				COALESCE( DATE_FORMAT( P.PSBL_MOV_DATE, '%Y%m%d' ), '' ) AS PSBL_MOV_DATE,
+				P.MON_MNTNCE_COST,
+				COALESCE( P.LOAN_GB_CD, '' ) AS LOAN_GB_CD,
+				P.LOAN_AMT,
+				COALESCE( P.PARKING_PSBL_YN, '' ) AS PARKING_PSBL_YN,
+				P.PARKING_COST,
+				P.ROOM_CNT,
+				P.BATH_ROOM_CNT,
+				COALESCE( P.CRNT_SECTR_GB_CD, '' ) AS CRNT_SECTR_GB_CD,
+				COALESCE( P.SUGGSTN_SECTR_GB_CD, '' ) AS SUGGSTN_SECTR_GB_CD,
+				COALESCE( P.BLD_DIRCTN_GB_CD, '' ) AS BLD_DIRCTN_GB_CD,
+				COALESCE( P.HEAT_KIND_GB_CD, '' ) AS HEAT_KIND_GB_CD,
+				P.WGHT_PER_PY,
+				COALESCE( P.ELV_FCLT_EXSTS_YN, '' ) AS ELV_FCLT_EXSTS_YN,
+				COALESCE( P.FRHGT_ELV_EXSTS_YN, '' ) AS FRHGT_ELV_EXSTS_YN,
+				COALESCE( P.INTRR_YN, '' ) AS INTRR_YN,
+				COALESCE( P.DOCK_EXSTS_YN, '' ) AS DOCK_EXSTS_YN,
+				COALESCE( P.HOIST_EXSTS_YN, '' ) AS HOIST_EXSTS_YN,
+				COALESCE( P.FLR_HGHT_TYP_GB_CD, '' ) AS FLR_HGHT_TYP_GB_CD,
+				COALESCE( P.ELCTR_PWR_TYP_GB_CD, '' ) AS ELCTR_PWR_TYP_GB_CD,
+				COALESCE( P.INTNL_STRCTR_TYP_CD, '' ) AS INTNL_STRCTR_TYP_CD,
+				COALESCE( P.BULT_IN_YN, '' ) AS BULT_IN_YN,
+				COALESCE( P.MOV_IN_REPRT_PSBL_YN, '' ) AS MOV_IN_REPRT_PSBL_YN,
+				COALESCE( P.CITY_PLAN_YN, '' ) AS CITY_PLAN_YN,
+				COALESCE( P.BLD_CNFRM_ISSUE_YN, '' ) AS BLD_CNFRM_ISSUE_YN,
+				COALESCE( P.LND_DEAL_CNFRM_APPL_YN, '' ) AS LND_DEAL_CNFRM_APPL_YN,
+				COALESCE( P.ENTRNCE_ROAD_EXSTS_YN, '' ) AS ENTRNCE_ROAD_EXSTS_YN,
+				COALESCE( P.OPTION_EXSTS_YN, '' ) AS OPTION_EXSTS_YN,
+				COALESCE( PPI.SMPL_SMR_DSCR, '' ) AS SMPL_SMR_DSCR,
+				COALESCE( PPI.DTL_EXPLNTN_DSCR, '' ) AS DTL_EXPLNTN_DSCR,
+				COALESCE( PPI.MATTER_PORT_LINK_URL, '' ) AS MATTER_PORT_LINK_URL,
+				COALESCE( PPI.PRVT_MEMO_DSCR, '' ) AS PRVT_MEMO_DSCR
+			FROM
+				TB_PROPERTY P
+					INNER JOIN TB_PROPERTY_PHOTO_INFO PPI
+						ON P.PRPT_SEQNO = PPI.PRPT_SEQNO
+			WHERE
+				P.PRPT_SEQNO = #{prptSeqno}
+				AND P.DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- Admin - 중개사 매물 목록조회 ( 페이징 ) -->
+	<select id="getEstBrkPrptItems" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				L.PRPT_SEQNO,
+				LPAD( L.PRPT_SEQNO, 6, '0' ) AS PRPT_NO,
+				L.EST_BRK_MEM_OFC_SEQNO,
+				L.MEM_SEQNO,
+				L.OFC_NM,
+				C1.ITEM_CD_NM AS ESTATE_TYP_NM,
+				L.TRAN_TYP_GB_CD,
+				C2.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				C3.ITEM_CD_NM AS DEAL_STAT_GB_NM,
+				L.ADDR,
+				L.DTL_ADDR,
+				L.DEAL_AMT,
+				L.DPST_AMT,
+				L.MONT_RENT_AMT,
+				DATE_FORMAT( L.REG_DTTM, '%Y.%m.%d' ) AS REG_DT,
+				CASE
+					WHEN DATE_FORMAT( L.REG_DTTM, '%Y%m%d' ) >= DATE_FORMAT( DATE_SUB( NOW(), INTERVAL 30 DAY ), '%Y%m%d' )
+						THEN '정상'
+					ELSE
+						'등록만료'
+				END AS PRPT_STAT_GB_NM,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_PROPERTY
+					WHERE
+						DEL_YN = 'N'
+						AND EST_BRK_MEM_OFC_SEQNO != 0
+						AND (
+								(
+		]]>
+			<choose>
+				<when test="@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(regiEstTypCdItems)">
+										ESTATE_TYP_GB_CD = 'REGIDENTAL'
+				</when>
+				<otherwise>
+										ESTATE_TYP_GB_CD = 'REGIDENTAL'
+										AND
+										ESTATE_TYP_CD IN (
+					<foreach collection="regiEstTypCdItems" item="regiEstTypCd" separator=",">
+												#{regiEstTypCd}
+					</foreach>
+										)
+				</otherwise>
+			</choose>
+								)
+								OR
+								(
+			<choose>
+				<when test="@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(commEstTypCdItems)">
+										ESTATE_TYP_GB_CD = 'COMMERCIAL'
+				</when>
+				<otherwise>
+										ESTATE_TYP_GB_CD = 'COMMERCIAL'
+										AND
+										ESTATE_TYP_CD IN (
+					<foreach collection="commEstTypCdItems" item="commEstTypCd" separator=",">
+												#{commEstTypCd}
+					</foreach>
+										)
+				</otherwise>
+			</choose>
+								)
+								OR
+								(
+			<choose>
+				<when test="@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(preEstTypCdItems)">
+										ESTATE_TYP_GB_CD = 'PRESALE'
+				</when>
+				<otherwise>
+										ESTATE_TYP_GB_CD = 'PRESALE'
+										AND
+										ESTATE_TYP_CD IN (
+					<foreach collection="preEstTypCdItems" item="preEstTypCd" separator=",">
+												#{preEstTypCd}
+					</foreach>
+										)
+				</otherwise>
+			</choose>
+								)
+						)
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(tranTypGbCdItems)">
+						AND TRAN_TYP_GB_CD IN (
+				<foreach collection="tranTypGbCdItems" item="tranTypGbCd" separator=",">
+								#{tranTypGbCd}
+				</foreach>
+						)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(dealStatGbCdItems)">
+								AND DEAL_STAT_GB_CD IN (
+				<foreach collection="dealStatGbCdItems" item="dealStatGbCd" separator=",">
+								#{dealStatGbCd}
+				</foreach>
+						)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+						AND (
+								LPAD( PRPT_SEQNO, 6, '0' ) LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+						)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(prptStatGbCd)">
+				<choose>
+					<when test='prptStatGbCd == "S"'>
+		<![CDATA[
+						AND REG_DTTM >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 */
+		]]>
+					</when>
+					<otherwise>
+		<![CDATA[
+						AND REG_DTTM < DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이상 지난건 */
+		]]>
+					</otherwise>
+				</choose>
+			</if>
+		<![CDATA[
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@RNUM := @RNUM + 1 AS ROWNUM,
+						T.PRPT_SEQNO,
+						T.EST_BRK_MEM_OFC_SEQNO,
+						T.MEM_SEQNO,
+						T.OFC_NM,
+						T.ESTATE_TYP_CD,
+						T.TRAN_TYP_GB_CD,
+						T.DEAL_STAT_GB_CD,
+						T.ADDR,
+						T.DTL_ADDR,
+						T.DEAL_AMT,
+						T.DPST_AMT,
+						T.MONT_RENT_AMT,
+						T.REG_DTTM
+					FROM
+						(
+							SELECT
+								@RNUM := 0 AS ROWNUM,
+								P.PRPT_SEQNO,
+								EBM.EST_BRK_MEM_OFC_SEQNO,
+								EBM.MEM_SEQNO,
+								EBM.OFC_NM,
+								P.ESTATE_TYP_CD,
+								P.TRAN_TYP_GB_CD,
+								P.DEAL_STAT_GB_CD,
+								P.ADDR,
+								P.DTL_ADDR,
+								P.DEAL_AMT,
+								P.DPST_AMT,
+								P.MONT_RENT_AMT,
+								P.REG_DTTM
+							FROM
+								TB_PROPERTY P
+									INNER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+							WHERE
+								P.DEL_YN = 'N'
+								AND P.EST_BRK_MEM_OFC_SEQNO != 0
+								AND (
+										(
+		]]>
+			<choose>
+				<when test="@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(regiEstTypCdItems)">
+												P.ESTATE_TYP_GB_CD = 'REGIDENTAL'
+				</when>
+				<otherwise>
+												P.ESTATE_TYP_GB_CD = 'REGIDENTAL'
+												AND
+												P.ESTATE_TYP_CD IN (
+					<foreach collection="regiEstTypCdItems" item="regiEstTypCd" separator=",">
+														#{regiEstTypCd}
+					</foreach>
+												)
+				</otherwise>
+			</choose>
+										)
+										OR
+										(
+			<choose>
+				<when test="@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(commEstTypCdItems)">
+												P.ESTATE_TYP_GB_CD = 'COMMERCIAL'
+				</when>
+				<otherwise>
+												P.ESTATE_TYP_GB_CD = 'COMMERCIAL'
+												AND
+												P.ESTATE_TYP_CD IN (
+					<foreach collection="commEstTypCdItems" item="commEstTypCd" separator=",">
+														#{commEstTypCd}
+					</foreach>
+												)
+				</otherwise>
+			</choose>
+										)
+										OR
+										(
+			<choose>
+				<when test="@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(preEstTypCdItems)">
+												P.ESTATE_TYP_GB_CD = 'PRESALE'
+				</when>
+				<otherwise>
+												P.ESTATE_TYP_GB_CD = 'PRESALE'
+												AND
+												P.ESTATE_TYP_CD IN (
+					<foreach collection="preEstTypCdItems" item="preEstTypCd" separator=",">
+														#{preEstTypCd}
+					</foreach>
+												)
+				</otherwise>
+			</choose>
+										)
+								)
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(tranTypGbCdItems)">
+								AND P.TRAN_TYP_GB_CD IN (
+				<foreach collection="tranTypGbCdItems" item="tranTypGbCd" separator=",">
+										#{tranTypGbCd}
+				</foreach>
+								)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(dealStatGbCdItems)">
+								AND P.DEAL_STAT_GB_CD IN (
+				<foreach collection="dealStatGbCdItems" item="dealStatGbCd" separator=",">
+										#{dealStatGbCd}
+				</foreach>
+								)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+								AND (
+										LPAD( P.PRPT_SEQNO, 6, '0' ) LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										P.ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+								)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(prptStatGbCd)">
+				<choose>
+					<when test='prptStatGbCd == "S"'>
+		<![CDATA[
+								AND P.REG_DTTM >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 */
+		]]>
+					</when>
+					<otherwise>
+		<![CDATA[
+								AND P.REG_DTTM < DATE_SUB( NOW(), INTERVAL 30 DAY )				/* 등록한지 30일이상 지난건 */
+		]]>
+					</otherwise>
+				</choose>
+			</if>
+		<![CDATA[
+							ORDER BY
+								P.REG_DTTM DESC
+							LIMIT #{edRnum}
+						) T
+					ORDER BY
+						T.REG_DTTM DESC
+				) L
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'ESTATE_TYP_CD'
+						AND L.ESTATE_TYP_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND L.TRAN_TYP_GB_CD = C2.ITEM_CD
+					INNER JOIN TB_COMN_CD C3
+						ON C3.COMN_CD = 'DEAL_STAT_GB_CD'
+						AND L.DEAL_STAT_GB_CD = C3.ITEM_CD
+			WHERE
+				L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.ROWNUM
+		]]>
+	</select>
+	
+	<!-- Admin - 중개사 매물 목록조회 ( 엑셀 다운용 ) -->
+	<select id="getEstBrkPrptDownloadList" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				LPAD( P.PRPT_SEQNO, 6, '0' ) AS PRPT_NO,
+				E.OFC_NM,
+				C1.ITEM_CD_NM AS ESTATE_TYP_NM,
+				P.TRAN_TYP_GB_CD,
+				C2.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				C3.ITEM_CD_NM AS DEAL_STAT_GB_NM,
+				P.ADDR,
+				P.DTL_ADDR,
+				P.DEAL_AMT,
+				P.DPST_AMT,
+				P.MONT_RENT_AMT,
+				DATE_FORMAT( P.REG_DTTM, '%Y.%m.%d' ) AS REG_DT,
+				CASE
+					WHEN DATE_FORMAT( P.REG_DTTM, '%Y%m%d' ) >= DATE_FORMAT( DATE_SUB( NOW(), INTERVAL 30 DAY ), '%Y%m%d' )
+						THEN '정상'
+					ELSE
+						'등록만료'
+				END AS PRPT_STAT_GB_NM
+			FROM
+				TB_PROPERTY P
+					INNER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO E
+						ON P.EST_BRK_MEM_OFC_SEQNO = E.EST_BRK_MEM_OFC_SEQNO
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'ESTATE_TYP_CD'
+						AND P.ESTATE_TYP_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND P.TRAN_TYP_GB_CD = C2.ITEM_CD
+					INNER JOIN TB_COMN_CD C3
+						ON C3.COMN_CD = 'DEAL_STAT_GB_CD'
+						AND P.DEAL_STAT_GB_CD = C3.ITEM_CD
+			WHERE
+				P.DEL_YN = 'N'
+				AND P.EST_BRK_MEM_OFC_SEQNO != 0
+				AND (
+						(
+		]]>
+			<choose>
+				<when test="@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(regiEstTypCdItems)">
+								P.ESTATE_TYP_GB_CD = 'REGIDENTAL'
+				</when>
+				<otherwise>
+								P.ESTATE_TYP_GB_CD = 'REGIDENTAL'
+								AND
+								P.ESTATE_TYP_CD IN (
+					<foreach collection="regiEstTypCdItems" item="regiEstTypCd" separator=",">
+										#{regiEstTypCd}
+					</foreach>
+								)
+				</otherwise>
+			</choose>
+						)
+						OR
+						(
+			<choose>
+				<when test="@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(commEstTypCdItems)">
+								P.ESTATE_TYP_GB_CD = 'COMMERCIAL'
+				</when>
+				<otherwise>
+								P.ESTATE_TYP_GB_CD = 'COMMERCIAL'
+								AND
+								P.ESTATE_TYP_CD IN (
+					<foreach collection="commEstTypCdItems" item="commEstTypCd" separator=",">
+										#{commEstTypCd}
+					</foreach>
+								)
+				</otherwise>
+			</choose>
+						)
+						OR
+						(
+			<choose>
+				<when test="@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(preEstTypCdItems)">
+								P.ESTATE_TYP_GB_CD = 'PRESALE'
+				</when>
+				<otherwise>
+								P.ESTATE_TYP_GB_CD = 'PRESALE'
+								AND
+								P.ESTATE_TYP_CD IN (
+					<foreach collection="preEstTypCdItems" item="preEstTypCd" separator=",">
+										#{preEstTypCd}
+					</foreach>
+								)
+				</otherwise>
+			</choose>
+						)
+				)
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(tranTypGbCdItems)">
+				AND P.TRAN_TYP_GB_CD IN (
+				<foreach collection="tranTypGbCdItems" item="tranTypGbCd" separator=",">
+						#{tranTypGbCd}
+				</foreach>
+				)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmptyArray(dealStatGbCdItems)">
+				AND P.DEAL_STAT_GB_CD IN (
+				<foreach collection="dealStatGbCdItems" item="dealStatGbCd" separator=",">
+						#{dealStatGbCd}
+				</foreach>
+				)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+				AND (
+						LPAD( P.PRPT_SEQNO, 6, '0' ) LIKE CONCAT( '%', #{srchVal}, '%' )
+						OR
+						ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+				)
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(prptStatGbCd)">
+				<choose>
+					<when test='prptStatGbCd == "S"'>
+		<![CDATA[
+				AND P.REG_DTTM >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 */
+		]]>
+					</when>
+					<otherwise>
+		<![CDATA[
+				AND P.REG_DTTM < DATE_SUB( NOW(), INTERVAL 30 DAY )				/* 등록한지 30일이상 지난건 */
+		]]>
+					</otherwise>
+				</choose>
+			</if>
+		<![CDATA[
+			ORDER BY
+				P.REG_DTTM DESC
+		]]>
+	</select>
+	
+	<!-- 매물제안요청 등록 -->
+	<insert id="registerPropertySuggestRequest" parameterType="PropertySuggestRequestVO">
+		<![CDATA[
+			INSERT INTO TB_PROPERTY_SUGGEST_REQUEST
+				(
+					MEM_SEQNO,
+					ESTATE_TYP_CD,
+					TRAN_TYP_GB_CD,
+					WISH_AREA,
+					SECTR_GB_CD,
+					USE_PPL_CNT,
+					PSBL_MOV_DAY_TYP_CD,
+					PSBL_MOV_ST_DATE,
+					PSBL_MOV_ED_DATE,
+					DEAL_AMT,
+					DPST_AMT,
+					MONT_RENT_AMT,
+					CLIENT_NM,
+					COMP_NM,
+					SUGGST_SECTR_CD,
+					WISH_FLR_TYP_CD,
+					INTRR_YN,
+					REQ_DSCR
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{estateTypCd},
+					#{tranTypGbCd},
+					#{wishArea},
+					#{sectrGbCd},
+					#{usePplCnt},
+					#{psblMovDayTypCd},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(psblMovStDate)">
+					STR_TO_DATE( #{psblMovStDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(psblMovEdDate)">
+					STR_TO_DATE( #{psblMovEdDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+					#{dealAmt},
+					#{dpstAmt},
+					#{montRentAmt},
+					#{clientNm},
+					#{compNm},
+					#{suggstSectrCd},
+					#{wishFlrTypCd},
+					#{intrrYn},
+					#{reqDscr}
+				)
+		]]>
+		<selectKey keyProperty="prptSuggstReqSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( PRPT_SUGGST_REQ_SEQNO ) AS PRPT_SUGGST_REQ_SEQNO
+			FROM
+				TB_PROPERTY_SUGGEST_REQUEST
+		</selectKey>
+	</insert>
+	
+	<!-- 매물제안요청지역 등록 -->
+	<insert id="registerPropertySuggestRegion" parameterType="PropertySuggestRequestVO">
+		<![CDATA[
+			INSERT INTO TB_PROPERTY_SUGGEST_REGION
+				(
+					PRPT_SUGGST_REQ_SEQNO,
+					REGION_NM
+				)
+			VALUES
+				(
+					#{prptSuggstReqSeqno},
+					#{regionNm}
+				)
+		]]>
+	</insert>
+	
+	<!-- 매물제안 매칭 매물조회 및 제안등록처리 -->
+	<insert id="registerMatchingPropertySuggest" parameterType="PropertySuggestRequestVO">
+		<![CDATA[
+			INSERT INTO TB_PROPERTY_SUGGEST
+				(
+					PRPT_SUGGST_REQ_SEQNO,
+					PRPT_SEQNO
+				)
+			SELECT
+				PS.PRPT_SUGGST_REQ_SEQNO,
+				P.PRPT_SEQNO
+			FROM
+				TB_PROPERTY P
+					INNER JOIN (
+									SELECT
+										PRPT_SUGGST_REQ_SEQNO,
+										ESTATE_TYP_CD,
+										TRAN_TYP_GB_CD,
+										WISH_AREA,
+										SECTR_GB_CD,
+										PSBL_MOV_DAY_TYP_CD,
+										PSBL_MOV_ST_DATE,
+										PSBL_MOV_ED_DATE,
+										DEAL_AMT,
+										DPST_AMT,
+										MONT_RENT_AMT,
+										WISH_FLR_TYP_CD,
+										INTRR_YN
+									FROM
+										TB_PROPERTY_SUGGEST_REQUEST
+									WHERE
+										PRPT_SUGGST_REQ_SEQNO = #{prptSuggstReqSeqno}
+					) PS
+						/* 매물구분코드 매칭 */
+						ON P.ESTATE_TYP_CD = PS.ESTATE_TYP_CD
+						
+						/* 거래유형구분코드 매칭 */
+						AND P.TRAN_TYP_GB_CD = PS.TRAN_TYP_GB_CD
+						
+						/* 희망면적 기준 -5평( 16.5제곱미터 ) ~ + 15평( 49.5제곱미터 ) 범위에서 매칭 */
+						AND (
+								P.SPLY_AREA BETWEEN PS.WISH_AREA - 16.5 AND PS.WISH_AREA + 49.5
+								OR
+								P.PRV_AREA BETWEEN PS.WISH_AREA - 16.5 AND PS.WISH_AREA + 49.5
+								OR
+								P.LND_AREA BETWEEN PS.WISH_AREA - 16.5 AND PS.WISH_AREA + 49.5
+								OR
+								P.TOT_FLR_AREA BETWEEN PS.WISH_AREA - 16.5 AND PS.WISH_AREA + 49.5
+						)
+						
+						/* 매물구분코드 -> 상가면 현업종구분코드 또는 추천업종구분코드 매칭 */
+						AND CASE
+								WHEN PS.ESTATE_TYP_CD = 'STR' AND COALESCE( PS.SECTR_GB_CD, '' ) != ''
+									THEN (
+											P.CRNT_SECTR_GB_CD = PS.SECTR_GB_CD
+											OR
+											P.SUGGSTN_SECTR_GB_CD = PS.SECTR_GB_CD
+									)
+								ELSE
+									TRUE
+							END
+						
+						/* 입주가능일유형코드 매칭 */
+						AND P.PSBL_MOV_DAY_TYP_CD = PS.PSBL_MOV_DAY_TYP_CD
+						
+						/* 입주가능일유형코드가 '직접입력'이면 입력한 기간범위에서 매칭 */
+						AND CASE
+								WHEN PS.PSBL_MOV_DAY_TYP_CD = 'INPUT'
+									THEN DATE_FORMAT( P.PSBL_MOV_DATE, '%Y%m%d' ) BETWEEN DATE_FORMAT( PS.PSBL_MOV_ST_DATE, '%Y%m%d' ) AND DATE_FORMAT( PS.PSBL_MOV_ED_DATE, '%Y%m%d' )
+								ELSE
+									TRUE
+							END
+							
+						/* 금액 기준 -50% ~ + 50% 범위에서 검색 ( 매매면 거래금액, 임대면 보증금/월임대료 ) */
+						AND CASE
+								WHEN PS.TRAN_TYP_GB_CD = 'TRADE'
+									THEN P.DEAL_AMT BETWEEN PS.DEAL_AMT * 0.5 AND PS.DEAL_AMT * 1.5
+								ELSE
+									(
+										P.DPST_AMT BETWEEN PS.DPST_AMT * 0.5 AND PS.DPST_AMT * 1.5
+										OR
+										P.MONT_RENT_AMT BETWEEN PS.MONT_RENT_AMT * 0.5 AND PS.MONT_RENT_AMT * 1.5
+									)
+							END
+							
+						/* 매물구분코드 -> 상가면 희망층수유형코드에 따른 해당층수 매칭 */
+						AND CASE
+								WHEN PS.ESTATE_TYP_CD = 'STR' AND PS.WISH_FLR_TYP_CD = '01'
+									THEN P.FLR = 1
+								WHEN PS.ESTATE_TYP_CD = 'STR' AND PS.WISH_FLR_TYP_CD = '02'
+									THEN P.FLR > 1
+								ELSE
+									TRUE
+							END
+			WHERE
+				P.DEL_YN = 'N'
+				AND P.ADMIN_CNFRM_YN = 'Y'
+				AND P.DEAL_STAT_GB_CD = 'ING'									/* 진행중 매물만 */
+				AND P.REG_DTTM >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은건 */
+				AND (
+		]]>
+			<foreach collection="suggstRegionItems" item="regionNm" separator="OR">
+						P.ADDR LIKE CONCAT( #{regionNm}, '%' )
+			</foreach>
+		<![CDATA[
+				)
+		]]>
+	</insert>
+	
+	<!-- FRT - 내 매물 제안서 목록조회 ( 일반/중개회원 공통 ) -->
+	<select id="getMyPrptSuggstItems" parameterType="Long" resultType="PropertySuggestRequestVO">
+		<![CDATA[
+			SELECT
+				T.PRPT_SUGGST_REQ_SEQNO,
+				T.SUGGST_MEM_TYP_CD,
+				T.SUGGST_MEM_SEQNO,
+				T.SUGGSTR_NM,
+				T.ESTATE_TYP_CD,
+				C1.ITEM_CD_NM AS ESTATE_TYP_NM,
+				T.TRAN_TYP_GB_CD,
+				C2.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				T.SUGGST_PRPT_CNT,
+				T.SUGGST_DT,
+				T.USE_PPL_CNT,
+				T.WISH_AREA,
+				T.PSBL_MOV_DAY_TYP_CD,
+				C3.ITEM_CD_NM AS PSBL_MOV_DAY_TYP_NM,
+				T.PSBL_MOV_ST_DATE,
+				T.PSBL_MOV_ED_DATE,
+				T.DEAL_AMT,
+				T.DPST_AMT,
+				T.MONT_RENT_AMT,
+				T.INTRR_YN,
+				T.REQ_DSCR
+			FROM
+				(
+					SELECT
+						G.PRPT_SUGGST_REQ_SEQNO,
+						G.SUGGST_MEM_TYP_CD,
+						G.SUGGST_MEM_SEQNO,
+						G.SUGGSTR_NM,
+						G.ESTATE_TYP_CD,
+						G.TRAN_TYP_GB_CD,
+						COUNT(1) AS SUGGST_PRPT_CNT,
+						G.SUGGST_DT,
+						G.USE_PPL_CNT,
+						G.WISH_AREA,
+						G.PSBL_MOV_DAY_TYP_CD,
+						G.PSBL_MOV_ST_DATE,
+						G.PSBL_MOV_ED_DATE,
+						G.DEAL_AMT,
+						G.DPST_AMT,
+						G.MONT_RENT_AMT,
+						G.INTRR_YN,
+						G.REQ_DSCR
+					FROM
+						(
+							SELECT
+								PSR.PRPT_SUGGST_REQ_SEQNO,
+								CASE
+									WHEN P.EST_BRK_MEM_OFC_SEQNO != 0
+										THEN 'E'
+									ELSE
+										'N'
+								END AS SUGGST_MEM_TYP_CD,
+								CASE
+									WHEN P.EST_BRK_MEM_OFC_SEQNO != 0
+										THEN ( SELECT MEM_SEQNO FROM TB_ESTATE_BROKER_MEMBER_OFFICE_INFO WHERE EST_BRK_MEM_OFC_SEQNO = P.EST_BRK_MEM_OFC_SEQNO )
+									ELSE
+										( SELECT MEM_SEQNO FROM TB_MEMBER WHERE MEM_SEQNO = P.REG_MEM_SEQNO )
+								END AS SUGGST_MEM_SEQNO,
+								CASE
+									WHEN P.EST_BRK_MEM_OFC_SEQNO != 0
+										THEN ( SELECT OFC_NM FROM TB_ESTATE_BROKER_MEMBER_OFFICE_INFO WHERE EST_BRK_MEM_OFC_SEQNO = P.EST_BRK_MEM_OFC_SEQNO )
+									ELSE
+										( SELECT MEM_NAME FROM TB_MEMBER WHERE MEM_SEQNO = P.REG_MEM_SEQNO )
+								END AS SUGGSTR_NM,
+								PSR.ESTATE_TYP_CD,
+								PSR.TRAN_TYP_GB_CD,
+								DATE_FORMAT( PSR.REG_DTTM, '%Y.%m.%d' ) AS SUGGST_DT,
+								PSR.USE_PPL_CNT,
+								PSR.WISH_AREA,
+								PSR.PSBL_MOV_DAY_TYP_CD,
+								CASE WHEN COALESCE( PSR.PSBL_MOV_ST_DATE, '' ) = '' THEN '' ELSE DATE_FORMAT( PSR.PSBL_MOV_ST_DATE, '%Y.%m.%d' ) END AS PSBL_MOV_ST_DATE,
+								CASE WHEN COALESCE( PSR.PSBL_MOV_ED_DATE, '' ) = '' THEN '' ELSE DATE_FORMAT( PSR.PSBL_MOV_ED_DATE, '%Y.%m.%d' ) END AS PSBL_MOV_ED_DATE,
+								PSR.DEAL_AMT,
+								PSR.DPST_AMT,
+								PSR.MONT_RENT_AMT,
+								PSR.INTRR_YN,
+								PSR.REQ_DSCR
+							FROM
+								TB_PROPERTY_SUGGEST_REQUEST PSR
+									INNER JOIN TB_PROPERTY_SUGGEST PS
+										ON PSR.PRPT_SUGGST_REQ_SEQNO = PS.PRPT_SUGGST_REQ_SEQNO
+									INNER JOIN TB_PROPERTY P
+										ON PS.PRPT_SEQNO = P.PRPT_SEQNO
+							WHERE
+								PSR.MEM_SEQNO = #{memSeqno}
+								AND PSR.DEL_YN = 'N'
+								AND PSR.REG_DTTM >= DATE_SUB( NOW(), INTERVAL 7 DAY )			/* 요청한지 7일이 지나지 않은건 */
+								AND P.DEL_YN = 'N'
+								AND P.ADMIN_CNFRM_YN = 'Y'
+								AND P.DEAL_STAT_GB_CD = 'ING'									/* 진행중 매물만 */
+								AND P.REG_DTTM >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은 매물 */
+						) G
+					GROUP BY
+						G.PRPT_SUGGST_REQ_SEQNO, G.SUGGST_MEM_TYP_CD, G.SUGGST_MEM_SEQNO, G.SUGGSTR_NM
+				) T
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'SUGGST_ESTATE_TYP_CD'
+						AND T.ESTATE_TYP_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'SUGGST_TRAN_TYP_GB_CD'
+						AND T.TRAN_TYP_GB_CD = C2.ITEM_CD
+					INNER JOIN TB_COMN_CD C3
+						ON C3.COMN_CD = 'PSBL_MOV_DAY_TYP_CD'
+						AND T.PSBL_MOV_DAY_TYP_CD = C3.ITEM_CD
+			ORDER BY
+				T.SUGGSTR_NM
+		]]>
+	</select>
+	
+	<!-- 매물제안 요청지역 목록조회 -->
+	<select id="getSuggstRegionNmList" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				REGION_NM
+			FROM
+				TB_PROPERTY_SUGGEST_REGION
+			WHERE
+				PRPT_SUGGST_REQ_SEQNO = #{prptSuggstReqSeqno}
+			ORDER BY
+				REGION_NM
+		]]>
+	</select>
+	
+	<!-- FRT - 내 제안 요청정보 조회 -->
+	<select id="getMyPropertySuggestRequestVO" parameterType="PropertySuggestRequestVO" resultType="PropertySuggestRequestVO">
+		<![CDATA[
+			SELECT
+				PSR.PRPT_SUGGST_REQ_SEQNO,
+				PSR.ESTATE_TYP_CD,
+				C1.ITEM_CD_NM AS ESTATE_TYP_NM,
+				PSR.TRAN_TYP_GB_CD,
+				C2.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				PSR.USE_PPL_CNT,
+				PSR.WISH_AREA,
+				COALESCE( C4.ITEM_CD_NM, '' ) AS SECTR_GB_NM,
+				PSR.PSBL_MOV_DAY_TYP_CD,
+				C3.ITEM_CD_NM AS PSBL_MOV_DAY_TYP_NM,
+				CASE WHEN COALESCE( PSR.PSBL_MOV_ST_DATE, '' ) = '' THEN '' ELSE DATE_FORMAT( PSR.PSBL_MOV_ST_DATE, '%Y.%m.%d' ) END AS PSBL_MOV_ST_DATE,
+				CASE WHEN COALESCE( PSR.PSBL_MOV_ED_DATE, '' ) = '' THEN '' ELSE DATE_FORMAT( PSR.PSBL_MOV_ED_DATE, '%Y.%m.%d' ) END AS PSBL_MOV_ED_DATE,
+				PSR.DEAL_AMT,
+				PSR.DPST_AMT,
+				PSR.MONT_RENT_AMT,
+				PSR.INTRR_YN,
+				PSR.REQ_DSCR,
+				DATE_FORMAT( PSR.REG_DTTM, '%Y.%m.%d' ) AS SUGGST_DT
+			FROM
+				TB_PROPERTY_SUGGEST_REQUEST PSR
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'SUGGST_ESTATE_TYP_CD'
+						AND PSR.ESTATE_TYP_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'SUGGST_TRAN_TYP_GB_CD'
+						AND PSR.TRAN_TYP_GB_CD = C2.ITEM_CD
+					INNER JOIN TB_COMN_CD C3
+						ON C3.COMN_CD = 'PSBL_MOV_DAY_TYP_CD'
+						AND PSR.PSBL_MOV_DAY_TYP_CD = C3.ITEM_CD
+					LEFT OUTER JOIN TB_COMN_CD C4
+						ON C4.COMN_CD = 'SECTR_GB_CD'
+						AND PSR.SECTR_GB_CD = C4.ITEM_CD
+			WHERE
+				PSR.PRPT_SUGGST_REQ_SEQNO = #{prptSuggstReqSeqno}
+				AND PSR.MEM_SEQNO = #{memSeqno}
+				AND PSR.DEL_YN = 'N'
+				AND PSR.REG_DTTM >= DATE_SUB( NOW(), INTERVAL 7 DAY )			/* 요청한지 7일이 지나지 않은건 */
+		]]>
+	</select>
+	
+	<!-- 제안자 정보 조회 -->
+	<select id="getMyPropertyRequestSuggesterInfo" parameterType="PropertySuggestRequestVO" resultType="PropertySuggestRequestVO">
+		<![CDATA[
+			SELECT
+				M.MEM_TYP_CD AS SUGGST_MEM_TYP_CD,
+				M.MEM_SEQNO AS SUGGST_MEM_SEQNO,
+				CASE
+					WHEN M.MEM_TYP_CD = 'N'
+						THEN M.MEM_NAME
+					ELSE
+						EBM.OFC_NM
+				END AS SUGGSTR_NM
+			FROM
+				TB_MEMBER M
+					LEFT OUTER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+						ON M.MEM_SEQNO = EBM.MEM_SEQNO
+			WHERE
+				M.DEL_YN = 'N'
+				AND M.MEM_TYP_CD = #{suggstMemTypCd}
+				AND M.MEM_SEQNO = #{suggstMemSeqno}
+		]]>
+	</select>
+		
+	<!-- 제안받은 매물 목록조회 -->
+	<select id="getSuggestRequestPropertyList" parameterType="PropertySuggestRequestVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				@RNUM := @RNUM + 1 AS ROWNUM,
+				L.PRPT_SEQNO,
+				C.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				L.REPR_IMG_URL,
+				L.SPLY_AREA,
+				L.PRV_AREA,
+				L.LND_AREA,
+				L.TOT_FLR_AREA,
+				L.SUGGST_DEAL_AMT,
+				L.DEAL_AMT,
+				L.DPST_AMT,
+				L.MONT_RENT_AMT,
+				L.ADDR,
+				L.DTL_ADDR,
+				L.ADDR_SHORT_NM,
+				L.LAT,
+				L.LNG,
+				L.FLR,
+				L.ALL_FLR,
+				L.MIN_FLR,
+				L.MAX_FLR,
+				L.MON_MNTNCE_COST,
+				L.FAV_YN
+			FROM
+				(
+					SELECT
+						@RNUM := 0 AS ROWNUM,
+						T.PRPT_SEQNO,
+						T.TRAN_TYP_GB_CD,
+						T.REPR_IMG_URL,
+						T.SPLY_AREA,
+						T.PRV_AREA,
+						T.LND_AREA,
+						T.TOT_FLR_AREA,
+						CASE
+							WHEN T.ESTATE_TYP_CD = 'KOG' OR T.ESTATE_TYP_CD = 'STR'
+								THEN LEAST( T.SPLY_AREA_GAP, T.PRV_AREA_GAP )
+							ELSE
+								LEAST( T.PRV_AREA_GAP, T.LND_AREA_GAP, T.TOT_FLR_AREA_GAP )
+						END AS AREA_GAP,
+						T.SUGGST_DEAL_AMT,
+						T.DEAL_AMT,
+						T.DPST_AMT,
+						T.MONT_RENT_AMT,
+						CASE
+							WHEN T.TRAN_TYP_GB_CD = 'TRADE'
+								THEN T.DEAL_AMT_GAP
+							ELSE
+								T.DPST_AMT_GAP
+						END AS AMT_GAP,
+						T.ADDR,
+						T.DTL_ADDR,
+						T.ADDR_SHORT_NM,
+						T.LAT,
+						T.LNG,
+						T.FLR,
+						T.ALL_FLR,
+						T.MIN_FLR,
+						T.MAX_FLR,
+						T.MON_MNTNCE_COST,
+						CASE WHEN T.FAV_CNT = 0 THEN 'N' ELSE 'Y' END AS FAV_YN
+					FROM
+						(
+							SELECT
+								G.PRPT_SEQNO,
+								G.ESTATE_TYP_CD,
+								G.TRAN_TYP_GB_CD,
+								G.REPR_IMG_URL,
+								G.SPLY_AREA,
+								CASE
+									WHEN G.WISH_AREA > G.SPLY_AREA
+										THEN G.WISH_AREA - G.SPLY_AREA
+									ELSE
+										G.SPLY_AREA - G.WISH_AREA
+								END AS SPLY_AREA_GAP,
+								G.PRV_AREA,
+								CASE
+									WHEN G.WISH_AREA > G.PRV_AREA
+										THEN G.WISH_AREA - G.PRV_AREA
+									ELSE
+										G.PRV_AREA - G.WISH_AREA
+								END AS PRV_AREA_GAP,
+								G.LND_AREA,
+								CASE
+									WHEN G.WISH_AREA > G.LND_AREA
+										THEN G.WISH_AREA - G.LND_AREA
+									ELSE
+										G.LND_AREA - G.WISH_AREA
+								END AS LND_AREA_GAP,
+								G.TOT_FLR_AREA,
+								CASE
+									WHEN G.WISH_AREA > G.TOT_FLR_AREA
+										THEN G.WISH_AREA - G.TOT_FLR_AREA
+									ELSE
+										G.TOT_FLR_AREA - G.WISH_AREA
+								END AS TOT_FLR_AREA_GAP,
+								G.SUGGST_DEAL_AMT,
+								G.DEAL_AMT,
+								CASE
+									WHEN G.SUGGST_DEAL_AMT > G.DEAL_AMT
+										THEN G.SUGGST_DEAL_AMT - G.DEAL_AMT
+									ELSE
+										G.DEAL_AMT - G.SUGGST_DEAL_AMT
+								END AS DEAL_AMT_GAP,
+								G.DPST_AMT,
+								CASE
+									WHEN G.SUGGST_DPST_AMT > G.DPST_AMT
+										THEN G.SUGGST_DPST_AMT - G.DPST_AMT
+									ELSE
+										G.DPST_AMT - G.SUGGST_DPST_AMT
+								END AS DPST_AMT_GAP,
+								G.MONT_RENT_AMT,
+								CASE
+									WHEN G.SUGGST_MONT_RENT_AMT > G.MONT_RENT_AMT
+										THEN G.SUGGST_MONT_RENT_AMT - G.MONT_RENT_AMT
+									ELSE
+										G.MONT_RENT_AMT - G.SUGGST_MONT_RENT_AMT
+								END AS MONT_RENT_AMT_GAP,
+								G.ADDR,
+								G.DTL_ADDR,
+								G.ADDR_SHORT_NM,
+								G.LAT,
+								G.LNG,
+								G.FLR,
+								G.ALL_FLR,
+								G.MIN_FLR,
+								G.MAX_FLR,
+								G.MON_MNTNCE_COST,
+								G.FAV_CNT
+							FROM
+								(
+									SELECT
+										P.PRPT_SEQNO,
+										P.ESTATE_TYP_CD,
+										P.TRAN_TYP_GB_CD,
+										COALESCE( PP.FILE_URL, '' ) AS REPR_IMG_URL,
+										PSR.WISH_AREA,
+										P.SPLY_AREA,
+										P.PRV_AREA,
+										P.LND_AREA,
+										P.TOT_FLR_AREA,
+										PSR.DEAL_AMT AS SUGGST_DEAL_AMT,
+										P.DEAL_AMT,
+										PSR.DPST_AMT AS SUGGST_DPST_AMT,
+										P.DPST_AMT,
+										PSR.MONT_RENT_AMT AS SUGGST_MONT_RENT_AMT,
+										P.MONT_RENT_AMT,
+										P.ADDR,
+										P.DTL_ADDR,
+										P.ADDR_SHORT_NM,
+										P.LAT,
+										P.LNG,
+										P.FLR,
+										P.ALL_FLR,
+										P.MIN_FLR,
+										P.MAX_FLR,
+										P.MON_MNTNCE_COST,
+										(
+											SELECT
+												COUNT(1)
+											FROM
+												TB_FAVORITE_PROPERTY
+											WHERE
+												MEM_SEQNO = #{memSeqno}
+												AND PRPT_SEQNO = P.PRPT_SEQNO
+										) AS FAV_CNT
+									FROM
+										TB_PROPERTY_SUGGEST_REQUEST PSR
+											INNER JOIN TB_PROPERTY_SUGGEST PS
+												ON PSR.PRPT_SUGGST_REQ_SEQNO = PS.PRPT_SUGGST_REQ_SEQNO
+											INNER JOIN TB_PROPERTY P
+												ON PS.PRPT_SEQNO = P.PRPT_SEQNO
+											LEFT OUTER JOIN TB_PROPERTY_PHOTOS PP
+												ON P.PRPT_SEQNO = PP.PRPT_SEQNO
+												AND PP.DEL_YN = 'N'
+												AND PP.REP_PHOTO_YN = 'Y'
+									WHERE
+										PSR.PRPT_SUGGST_REQ_SEQNO = #{prptSuggstReqSeqno}
+										AND P.DEL_YN = 'N'
+										AND P.ADMIN_CNFRM_YN = 'Y'
+										AND P.DEAL_STAT_GB_CD = 'ING'									/* 진행중 매물만 */
+										AND P.REG_DTTM >= DATE_SUB( NOW(), INTERVAL 30 DAY )			/* 등록한지 30일이 지나지 않은 매물 */
+										AND CASE
+												WHEN #{suggstMemTypCd} = 'E'
+													THEN P.EST_BRK_MEM_OFC_SEQNO = ( SELECT EST_BRK_MEM_OFC_SEQNO FROM TB_ESTATE_BROKER_MEMBER_OFFICE_INFO WHERE MEM_SEQNO = #{suggstMemSeqno} )
+												ELSE
+													P.REG_MEM_SEQNO = ( SELECT MEM_SEQNO FROM TB_MEMBER WHERE MEM_SEQNO = #{suggstMemSeqno} )
+											END
+								) G
+						) T
+					ORDER BY
+						AREA_GAP, AMT_GAP
+				) L
+					INNER JOIN TB_COMN_CD C
+						ON C.COMN_CD = 'TRAN_TYP_GB_CD'
+						AND L.TRAN_TYP_GB_CD = C.ITEM_CD
+			ORDER BY
+				L.AREA_GAP, L.AMT_GAP
+		]]>
+	</select>
+	
+	<!-- Admin - 매물 제안요청 목록조회 ( 페이징 ) -->
+	<select id="getPrptSuggstReqItems" parameterType="PropertySuggestRequestVO" resultType="PropertySuggestRequestVO">
+		<![CDATA[
+			SELECT
+				L.ROWNUM,
+				L.MEM_SEQNO,
+				L.EMAIL,
+				L.MEM_NAME,
+				L.MOB_NO,
+				L.PRPT_SUGGST_CNT,
+				DATE_FORMAT( L.RECENT_DTTM, '%Y.%m.%d' ) AS RECENT_DT,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						(
+							SELECT
+								M.MEM_SEQNO
+							FROM
+								TB_MEMBER M
+									INNER JOIN TB_PROPERTY_SUGGEST_REQUEST PSR
+										ON M.MEM_SEQNO = PSR.MEM_SEQNO
+									LEFT OUTER JOIN TB_PROPERTY_SUGGEST PS
+										ON PSR.PRPT_SUGGST_REQ_SEQNO = PS.PRPT_SUGGST_REQ_SEQNO
+							WHERE
+								M.DEL_YN = 'N'
+								AND M.MEM_TYP_CD != 'A'					/* 관리자 제외 */
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+								AND (
+										M.MEM_NAME LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										M.MOB_NO = #{srchValEnc}
+								)
+			</if>
+		<![CDATA[
+								AND PSR.DEL_YN = 'N'
+							GROUP BY
+								M.MEM_SEQNO
+						) G
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@NUM := @NUM + 1 AS RNUM,
+						T.ROWNUM,
+						T.MEM_SEQNO,
+						T.EMAIL,
+						T.MEM_NAME,
+						T.MOB_NO,
+						T.PRPT_SUGGST_CNT,
+						T.RECENT_DTTM
+					FROM
+						(
+							SELECT
+								@NUM := 0 AS RNUM,
+								@RNUM := @RNUM + 1 AS ROWNUM,
+								F.MEM_SEQNO,
+								F.EMAIL,
+								F.MEM_NAME,
+								F.MOB_NO,
+								F.PRPT_SUGGST_CNT,
+								F.RECENT_DTTM
+							FROM
+								(
+									SELECT
+										@RNUM := 0 AS ROWNUM,
+										G.MEM_SEQNO,
+										G.EMAIL,
+										G.MEM_NAME,
+										G.MOB_NO,
+										G.PRPT_SUGGST_CNT,
+										G.RECENT_DTTM
+									FROM
+										(
+											SELECT
+												M.MEM_SEQNO,
+												M.EMAIL,
+												M.MEM_NAME,
+												M.MOB_NO,
+												SUM( IF( PS.PRPT_SUGGST_SEQNO IS NULL, 0, 1 ) ) AS PRPT_SUGGST_CNT,
+												MAX( PSR.REG_DTTM ) AS RECENT_DTTM
+											FROM
+												TB_MEMBER M
+													INNER JOIN TB_PROPERTY_SUGGEST_REQUEST PSR
+														ON M.MEM_SEQNO = PSR.MEM_SEQNO
+													LEFT OUTER JOIN TB_PROPERTY_SUGGEST PS
+														ON PSR.PRPT_SUGGST_REQ_SEQNO = PS.PRPT_SUGGST_REQ_SEQNO
+											WHERE
+												M.DEL_YN = 'N'
+												AND M.MEM_TYP_CD != 'A'					/* 관리자 제외 */
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+												AND (
+														M.MEM_NAME LIKE CONCAT( '%', #{srchVal}, '%' )
+														OR
+														M.MOB_NO = #{srchValEnc}
+												)
+			</if>
+		<![CDATA[
+												AND PSR.DEL_YN = 'N'
+											GROUP BY
+												M.MEM_SEQNO
+										) G
+									ORDER BY
+										G.RECENT_DTTM DESC
+									LIMIT #{edRnum}
+								) F
+							ORDER BY
+								F.RECENT_DTTM
+						) T
+					ORDER BY
+						T.RECENT_DTTM DESC
+				) L
+			WHERE
+				L.RNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.RNUM
+		]]>
+	</select>
+	
+	<!-- 투어요청 검증정보 조회 -->
+	<select id="getPrptTourValidationInfo" parameterType="PropertyVO" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				CASE
+					WHEN P.EST_BRK_MEM_OFC_SEQNO = 0
+						THEN P.REG_MEM_SEQNO
+					ELSE
+						( SELECT MEM_SEQNO FROM TB_ESTATE_BROKER_MEMBER_OFFICE_INFO WHERE EST_BRK_MEM_OFC_SEQNO = P.EST_BRK_MEM_OFC_SEQNO )
+				END AS MEM_SEQNO,
+				(
+					SELECT
+						MEM_NAME
+					FROM
+						TB_MEMBER
+					WHERE
+						MEM_SEQNO = #{memSeqno}
+				) AS MEM_NAME,
+				P.ADDR,
+				C.ITEM_CD_NM AS ESTATE_TYP_GB_NM,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_REQUEST_TOUR
+					WHERE
+						MEM_SEQNO = #{memSeqno}
+						AND PRPT_SEQNO = P.PRPT_SEQNO
+				) AS TOUR_REQ_CNT
+			FROM
+				TB_PROPERTY P
+					INNER JOIN TB_COMN_CD C
+						ON C.COMN_CD = 'ESTATE_TYP_GB_CD'
+						AND P.ESTATE_TYP_GB_CD = C.ITEM_CD
+			WHERE
+				P.PRPT_SEQNO = #{prptSeqno}
+				AND P.DEL_YN = 'N'
+				AND P.ADMIN_CNFRM_YN = 'Y'
+				AND P.DEAL_STAT_GB_CD = 'ING'																/* 진행중 매물만 */
+				AND COALESCE( P.ADMIN_CNFRM_DTTM, P.REG_DTTM ) >= DATE_SUB( NOW(), INTERVAL 30 DAY )		/* 등록한지 30일이 지나지 않은건 ( 관리자 확인일시 값이 있으면 관리자 확인일시 값 우선 ) */
+		]]>
+	</select>
+	
+	<!-- 투어 요청 등록 -->
+	<insert id="registerTourRequest" parameterType="PropertyVO">
+		<![CDATA[
+			INSERT INTO TB_REQUEST_TOUR
+				(
+					MEM_SEQNO,
+					PRPT_SEQNO
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{prptSeqno}
+				)
+		]]>
+	</insert>
+	
+	<!-- 매물제안 삭제대상 매물시퀀스 목록조회 -->
+	<select id="getDeletePropertySuggestPrptSeqnoList" parameterType="PropertySuggestRequestVO" resultType="Long">
+		<![CDATA[
+			SELECT
+				P.PRPT_SEQNO
+			FROM
+				TB_PROPERTY_SUGGEST_REQUEST PSR
+					INNER JOIN TB_PROPERTY_SUGGEST PS
+						ON PSR.PRPT_SUGGST_REQ_SEQNO = PS.PRPT_SUGGST_REQ_SEQNO
+					INNER JOIN TB_PROPERTY P
+						ON PS.PRPT_SEQNO = P.PRPT_SEQNO
+					LEFT OUTER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+						ON P.EST_BRK_MEM_OFC_SEQNO = EBM.EST_BRK_MEM_OFC_SEQNO
+			WHERE
+				PSR.DEL_YN = 'N'
+				AND PSR.PRPT_SUGGST_REQ_SEQNO = #{prptSuggstReqSeqno}
+		]]>
+			<if test='suggstMemTypCd =="E"'>
+				AND EBM.MEM_SEQNO = #{suggstMemSeqno}
+			</if>
+			<if test='suggstMemTypCd =="N"'>
+				AND P.REG_MEM_SEQNO = #{suggstMemSeqno}
+			</if>
+	</select>
+	
+	<!-- FRT - 내 매물 제안서 삭제 ( 일반/중개회원 공통 ) -->
+	<delete id="deletePropertySuggest" parameterType="PropertySuggestRequestVO">
+		<![CDATA[
+			DELETE FROM
+				TB_PROPERTY_SUGGEST
+			WHERE
+				PRPT_SUGGST_REQ_SEQNO = #{prptSuggstReqSeqno}
+				AND PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</delete>
+	
+	<!-- 관리자 확인여부 조회 -->
+	<select id="getAdminCnfrmYn" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				ADMIN_CNFRM_YN
+			FROM
+				TB_PROPERTY
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 매물제안 회원 상세정보 조회 -->
+	<select id="getSuggstnPrptMemDtlItem" parameterType="Long" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				COALESCE( M.PRFL_IMG_URL, '' ) AS PRFL_IMG_URL,
+				C.ITEM_CD_NM AS MEM_TYP_NM,
+				COALESCE( EBM.OFC_NM, '' ) AS OFC_NM,
+				COALESCE( EBM.REPR_NM, '' ) AS REPR_NM,
+				COALESCE( EBM.TEL_NO, '' ) AS TEL_NO,
+				M.MEM_NAME,
+				M.EMAIL,
+				M.MOB_NO,
+				DATE_FORMAT( M.REG_DTTM, '%Y.%m.%d' ) AS JOIN_DT,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_PROPERTY_SUGGEST_REQUEST PSR
+							INNER JOIN TB_PROPERTY_SUGGEST PS
+								ON PSR.PRPT_SUGGST_REQ_SEQNO = PS.PRPT_SUGGST_REQ_SEQNO
+					WHERE
+						PSR.MEM_SEQNO = M.MEM_SEQNO
+						AND PSR.DEL_YN = 'N'
+				) AS PRPT_SUGGST_CNT,
+				(
+					SELECT DATE_FORMAT( MAX( PSR.REG_DTTM ), '%Y.%m.%d' ) FROM TB_PROPERTY_SUGGEST_REQUEST PSR WHERE PSR.MEM_SEQNO = M.MEM_SEQNO AND DEL_YN = 'N'
+				) AS RECENT_DT
+			FROM
+				TB_MEMBER M
+					INNER JOIN TB_COMN_CD C
+						ON C.COMN_CD = 'MEM_TYP_CD'
+						AND M.MEM_TYP_CD = C.ITEM_CD
+					LEFT OUTER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+						ON M.MEM_SEQNO = EBM.MEM_SEQNO
+			WHERE
+				M.MEM_SEQNO  = #{memSeqno}
+				AND M.DEL_YN = 'N'
+				AND M.MEM_TYP_CD != 'A'						/* 관리자 제외 */
+		]]>
+	</select>
+</mapper>

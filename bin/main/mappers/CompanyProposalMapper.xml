@@ -1,0 +1,858 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CompanyProposalMapper">
+
+	<!-- 기업명 중복검증 -->
+	<select id="isExistsCompNm" parameterType="CompanyProposalVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_ESTATE_BROKER_MEMBER_COMPANY
+			WHERE
+				DEL_YN = 'N'
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND COMP_NM = #{compNm}
+		]]>
+			<if test="compSeqno != 0">
+				AND COMP_SEQNO != #{compSeqno}
+			</if>
+	</select>
+	
+	<!-- 신규기업 등록 -->
+	<insert id="registerNewCompanyItem" parameterType="CompanyProposalVO">
+		<![CDATA[
+			INSERT INTO TB_ESTATE_BROKER_MEMBER_COMPANY
+				(
+					EST_BRK_MEM_OFC_SEQNO,
+					COMP_NM,
+					EST_BRK_DISP_POS_NM
+				)
+			VALUES
+				(
+					#{estBrkMemOfcSeqno},
+					#{compNm},
+					#{estBrkDispPosNm}
+				)
+		]]>
+	</insert>
+
+	<!-- 기업명 유효성 검증 -->
+	<select id="isUsersComp" parameterType="CompanyProposalVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_ESTATE_BROKER_MEMBER_COMPANY
+			WHERE
+				DEL_YN = 'N'
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND COMP_SEQNO = #{compSeqno}
+		]]>
+	</select>
+	
+	<!-- 기업명 수정 -->
+	<update id="updateCompNm" parameterType="CompanyProposalVO">
+		<![CDATA[
+			UPDATE
+				TB_ESTATE_BROKER_MEMBER_COMPANY
+			SET
+				COMP_NM = #{compNm}
+			WHERE
+				DEL_YN = 'N'
+				AND COMP_SEQNO = #{compSeqno}
+		]]>
+	</update>
+	
+	<!-- 기업 삭제 -->
+	<update id="deleteCompanyItem" parameterType="CompanyProposalVO">
+		<![CDATA[
+			UPDATE
+				TB_ESTATE_BROKER_MEMBER_COMPANY
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				DEL_YN = 'N'
+				AND COMP_SEQNO = #{compSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+		]]>
+	</update>
+	
+	<!-- 기업 이전제안 매물 삭제 -->
+	<update id="deleteCompanyPrpslPrptItems" parameterType="CompanyProposalVO">
+		<![CDATA[
+			UPDATE
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				DEL_YN = 'N'
+				AND COMP_SEQNO = #{compSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+		]]>
+	</update>
+	
+	<!-- 기업 목록 조회 -->
+	<select id="getCompItems" parameterType="Long" resultType="CompanyProposalVO">
+		<![CDATA[
+			SELECT
+				EBMC.COMP_SEQNO,
+				EBMC.COMP_NM,
+				COALESCE( DATE_FORMAT( MAX( CMPP.REG_DTTM ), '%Y.%m.%d' ), '' ) AS RECENT_DT,
+				SUM( IF( CMPP.COMP_SEQNO IS NULL, 0, 1 ) ) AS PRPSL_CNT
+			FROM
+				TB_ESTATE_BROKER_MEMBER_COMPANY EBMC
+					LEFT OUTER JOIN TB_COMPANY_MOVE_PROPOSAL_PROPERTY CMPP
+						ON EBMC.COMP_SEQNO = CMPP.COMP_SEQNO
+						AND CMPP.DEL_YN = 'N'
+			WHERE
+				EBMC.EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND EBMC.DEL_YN = 'N'
+			GROUP BY
+				EBMC.COMP_SEQNO
+			ORDER BY
+				RECENT_DT DESC, EBMC.REG_DTTM DESC
+		]]>
+	</select>
+	
+	<!-- 기업이전 제안매물 임시 1단계 정보 조회 -->
+	<select id="getRegTmpKeyOfCompMovPrpslPrptStep1" parameterType="CompanyProposalVO" resultType="String">
+		<![CDATA[
+			SELECT
+				TMP_JSON_DATA
+			FROM
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND REG_STEP = 1
+		]]>
+	</select>
+	
+	<!-- 기업이전제안매물 1단계정보 업데이트 -->
+	<update id="updateCompMovPrpslPrptStep1Data" parameterType="CompanyProposalVO">
+		<![CDATA[
+			UPDATE
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			SET
+				ESTATE_TYP_GB_CD = #{estateTypGbCd},
+				ESTATE_TYP_CD = #{estateTypCd},
+				TMP_ADDR_YN = #{tmpAddrYn},
+				ADDR = #{addr},
+				ROAD_ADDR = #{roadAddr},
+				GRP_ADDR = #{grpAddr},
+				BLD_NM = #{bldNm},
+				LAT = #{lat},
+				LNG = #{lng}
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 이전제안 건물(매물) 1단계 수정용 정보 조회 -->
+	<select id="getCompMovPrpslPrptStep1Data" parameterType="CompanyProposalVO" resultType="CompanyProposalVO">
+		<![CDATA[
+			SELECT
+				ESTATE_TYP_GB_CD,
+				ESTATE_TYP_CD,
+				TMP_ADDR_YN,
+				ADDR,
+				ROAD_ADDR,
+				BLD_NM,
+				LAT,
+				LNG
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND COMP_SEQNO = #{compSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 기업이전제안매물 2단계정보 업데이트 -->
+	<update id="updateCompMovPrpslPrptStep2Data" parameterType="CompanyProposalVO">
+		<![CDATA[
+			UPDATE
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			SET
+				TRAN_TYP_GB_CD = #{tranTypGbCd},
+				SALES_COST = #{salesCost},
+				DPST_AMT = #{dpstAmt},
+				MONT_RENT_AMT = #{montRentAmt},
+				PRMM_AMT = #{prmmAmt},
+				ACQSTN_TAX_RATIO = #{acqstnTaxRatio},
+				SUPPRT_AMT = #{supprtAmt},
+				ETC_COST = #{etcCost},
+				LOAN_RATIO1 = #{loanRatio1},
+				LOAN_RATIO2 = #{loanRatio2},
+				LOAN_INTR_RATIO = #{loanIntrRatio},
+				INVEST_YN = #{investYn},
+				INVEST_DPST_AMT = #{investDpstAmt},
+				INVEST_MONT_RENT_AMT = #{investMontRentAmt}
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 이전제안 건물(매물) 2단계 수정용 정보 조회 -->
+	<select id="getCompMovPrpslPrptStep2Data" parameterType="CompanyProposalVO" resultType="CompanyProposalVO">
+		<![CDATA[
+			SELECT
+				TRAN_TYP_GB_CD,
+				SALES_COST,
+				DPST_AM,
+				MONT_RENT_AMT,
+				PRMM_AMT,
+				ACQSTN_TAX_RATIO,
+				SUPPRT_AMT,
+				ETC_COST,
+				LOAN_RATIO1,
+				LOAN_RATIO2,
+				LOAN_INTR_RATIO,
+				INVEST_YN,
+				INVEST_DPST_AMT,
+				INVEST_MONT_RENT_AMT
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND COMP_SEQNO = #{compSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 기업이전제안 매물(건물) 등록 -->
+	<insert id="registerCompMovPrpslPrpt" parameterType="CompanyProposalVO">
+		<![CDATA[
+			INSERT INTO TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+				(
+					COMP_SEQNO,
+					EST_BRK_MEM_OFC_SEQNO,
+					ESTATE_TYP_GB_CD,
+					ESTATE_TYP_CD,
+					TRAN_TYP_GB_CD,
+					BLD_NM,
+					TMP_ADDR_YN,
+					ADDR,
+					ROAD_ADDR,
+					GRP_ADDR,
+					LAT,
+					LNG,
+					SALES_COST,
+					DPST_AMT,
+					MONT_RENT_AMT,
+					PRMM_AMT,
+					ACQSTN_TAX_RATIO,
+					SUPPRT_AMT,
+					ETC_COST,
+					LOAN_RATIO1,
+					LOAN_RATIO2,
+					LOAN_INTR_RATIO,
+					INVEST_YN,
+					INVEST_DPST_AMT,
+					INVEST_MONT_RENT_AMT,
+					PRV_AREA,
+					FLR,
+					ALL_FLR,
+					MON_MNTNCE_COST,
+					PSBL_MOV_DAY_TYP_CD,
+					PSBL_MOV_DATE,
+					HEAT_KIND_GB_CD,
+					PARKING_CAR_CNT,
+					BLD_SPCL_ADVTG_DSCR,
+					REQ_DSCR
+				)
+			VALUES
+				(
+					
+					#{compSeqno},
+					#{estBrkMemOfcSeqno},
+					#{estateTypGbCd},
+					#{estateTypCd},
+					#{tranTypGbCd},
+					#{bldNm},
+					#{tmpAddrYn},
+					#{addr},
+					#{roadAddr},
+					#{grpAddr},
+					#{lat},
+					#{lng},
+					#{salesCost},
+					#{dpstAmt},
+					#{montRentAmt},
+					#{prmmAmt},
+					#{acqstnTaxRatio},
+					#{supprtAmt},
+					#{etcCost},
+					#{loanRatio1},
+					#{loanRatio2},
+					#{loanIntrRatio},
+					#{investYn},
+					#{investDpstAmt},
+					#{investMontRentAmt},
+					#{prvArea},
+					#{flr},
+					#{allFlr},
+					#{monMntnceCost},
+					#{psblMovDayTypCd},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(psblMovDate)">
+					STR_TO_DATE( #{psblMovDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+					NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+					#{heatKindGbCd},
+					#{parkingCarCnt},
+					#{bldSpclAdvtgDscr},
+					#{reqDscr}
+				)
+		]]>
+		<selectKey keyProperty="movPrpslPrptSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( MOV_PRPSL_PRPT_SEQNO ) AS MOV_PRPSL_PRPT_SEQNO
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+		</selectKey>
+	</insert>
+	
+	<!-- 기업이전제안매물 최종(3)단계정보 업데이트 -->
+	<update id="updateCompMovPrpslPrptFinalStepData" parameterType="CompanyProposalVO">
+		<![CDATA[
+			UPDATE
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			SET
+				PRV_AREA = #{prvArea},
+				FLR = #{flr},
+				ALL_FLR = #{allFlr},
+				MON_MNTNCE_COST = #{monMntnceCost},
+				PSBL_MOV_DAY_TYP_CD = #{psblMovDayTypCd},
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(psblMovDate)">
+				PSBL_MOV_DATE = STR_TO_DATE( #{psblMovDate}, '%Y%m%d' ),
+				</when>
+				<otherwise>
+				PSBL_MOV_DATE = NULL,
+				</otherwise>
+			</choose>
+		<![CDATA[
+				HEAT_KIND_GB_CD = #{heatKindGbCd},
+				PARKING_CAR_CNT = #{parkingCarCnt},
+				BLD_SPCL_ADVTG_DSCR = #{bldSpclAdvtgDscr},
+				REQ_DSCR = #{reqDscr}
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 등록단계별임시정보 이전제안매물시퀀스 등록 -->
+	<update id="updateTempDataMovPrpslPrptSeqno" parameterType="RegistrationTmpDataStepVO">
+		<![CDATA[
+			UPDATE
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			SET
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+			WHERE
+				REG_TMP_KEY = #{regTmpKey}
+				AND REG_CLAS_CD = 'ESTBRK_TRAN_PRPSL'
+		]]>
+	</update>
+	
+	<!-- 건물시설 유형코드 전체 삭제 -->
+	<delete id="clearCompMovPrpslPrptFacTyps" parameterType="Long">
+		<![CDATA[
+			DELETE FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY_FACILITY_TYPS
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+		]]>
+	</delete>
+	
+	<!-- 건물시설 유형코드 등록 -->
+	<insert id="registerCompMovPrpslPrptFacTyps" parameterType="CompanyProposalVO">
+		<![CDATA[
+			INSERT INTO TB_COMPANY_MOVE_PROPOSAL_PROPERTY_FACILITY_TYPS
+				(
+					MOV_PRPSL_PRPT_SEQNO,
+					COMP_PRPSL_BLD_FAC_TYP_CD
+				)
+			VALUES
+				(
+					#{movPrpslPrptSeqno},
+					#{compPrpslBldFacTypCd}
+				)
+		]]>
+	</insert>
+	
+	<!-- 기업이전제안 매물 사진등록 -->
+	<insert id="registerCompMovPrpslPrptPhoto" parameterType="CompanyProposalVO">
+		<![CDATA[
+			INSERT INTO TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS
+				(
+					MOV_PRPSL_PRPT_SEQNO,
+					SORT_SERL,
+					SAVE_FILE_NM,
+					FILE_URL,
+					PHOTO_GB
+				)
+			VALUES
+				(
+					#{movPrpslPrptSeqno},
+					#{sortSerl},
+					#{saveFileNm},
+					#{fileUrl},
+					#{photoGb}
+				)
+		]]>
+	</insert>
+	
+	<!-- 기업이전제안 매물 외관사진 삭제 -->
+	<update id="deleteCompMovPrpslPrptOuterPhoto" parameterType="Long">
+		<![CDATA[
+			UPDATE
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND PHOTO_GB = 'O'
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 기업이전제안 매물 내부사진 삭제 -->
+	<update id="deleteCompMovPrpslPrptInnterPhoto" parameterType="CompanyProposalVO">
+		<![CDATA[
+			UPDATE
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS
+			SET
+				SORT_SERL = 0.00,
+				DEL_YN = 'Y'
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND SAVE_FILE_NM = #{saveFileNm}
+				AND PHOTO_GB = 'I'
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 기업이전제안 매물 내부사진 정렬순서 변경 -->
+	<update id="updateCompMovPrpslPrptInnterPhotoSortSerl" parameterType="CompanyProposalVO">
+		<![CDATA[
+			UPDATE
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS
+			SET
+				SORT_SERL = #{sortSerl}
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND SAVE_FILE_NM = #{saveFileNm}
+				AND PHOTO_GB = 'I'
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- 이전제안 건물(매물) 최종단계 수정용 정보 조회 -->
+	<select id="getCompMovPrpslPrptFinalStepData" parameterType="CompanyProposalVO" resultType="CompanyProposalVO">
+		<![CDATA[
+			SELECT
+				PRV_AREA,
+				FLR,
+				ALL_FLR,
+				MON_MNTNCE_COST,
+				PSBL_MOV_DAY_TYP_CD,
+				COALESCE( DATE_FORMAT( PSBL_MOV_DATE, '%Y%m%d' ), '' ) AS PSBL_MOV_DATE,
+				HEAT_KIND_GB_CD,
+				PARKING_CAR_CNT,
+				BLD_SPCL_ADVTG_DSCR,
+				REQ_DSCR
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND COMP_SEQNO = #{compSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 기업이전제안 매물 건물시설 유형코드 목록조회 -->
+	<select id="getCompPrpslBldFacTypList" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				COMP_PRPSL_BLD_FAC_TYP_CD
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY_FACILITY_TYPS
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+		]]>
+	</select>
+	
+	<!-- 기업이전제안 매물사진 목록조회 -->
+	<select id="getCompMovPrpslPrptPhotoList" parameterType="Long" resultType="CompanyProposalVO">
+		<![CDATA[
+			SELECT
+				SAVE_FILE_NM,
+				FILE_URL,
+				PHOTO_GB
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND DEL_YN = 'N'
+			ORDER BY
+				SORT_SERL
+		]]>
+	</select>
+	
+	<!-- 기업 기본정보 조회 -->
+	<select id="getCompItem" parameterType="CompanyProposalVO" resultType="CompanyProposalVO">
+		<![CDATA[
+			SELECT
+				COMP_NM,
+				EST_BRK_DISP_POS_NM
+			FROM
+				TB_ESTATE_BROKER_MEMBER_COMPANY
+			WHERE
+				COMP_SEQNO = #{compSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 기업 이전 제안메물 지번주소 그룹핑 목록조회 -->
+	<select id="getCompMovPrpslAddressGroupList" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				GRP_ADDR
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			WHERE
+				COMP_SEQNO = #{compSeqno}
+				AND DEL_YN = 'N'
+			GROUP BY
+				GRP_ADDR
+			ORDER BY
+				GRP_ADDR
+		]]>
+	</select>
+	
+	<!-- 기업이전 제안매물 목록조회 -->
+	<select id="getCompMovPrpslPrptListOfGrpAddr" parameterType="CompanyProposalVO" resultType="CompanyProposalVO">
+		<![CDATA[
+			SELECT
+				P.MOV_PRPSL_PRPT_SEQNO,
+				P.BLD_NM,
+				P.ADDR,
+				P.PRV_AREA,
+				P.TRAN_TYP_GB_CD,
+				C.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				P.SALES_COST,
+				P.DPST_AMT,
+				P.MONT_RENT_AMT,
+				P.FLR,
+				P.ALL_FLR
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY P
+					INNER JOIN TB_COMN_CD C
+						ON C.COMN_CD = 'COMP_PRPSL_TRAN_TYP_GB_CD'
+						AND P.TRAN_TYP_GB_CD = C.ITEM_CD
+			WHERE
+				P.COMP_SEQNO = #{compSeqno}
+				AND P.GRP_ADDR = #{grpAddr}
+				AND P.DEL_YN = 'N'
+			ORDER BY
+				P.REG_DTTM DESC
+		]]>
+	</select>
+	
+	<!-- 건물 유효성 검증 -->
+	<select id="isUsersBld" parameterType="CompanyProposalVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 기업이전 제안 건물 삭제 -->
+	<update id="deleteCompPrpslBldItem" parameterType="CompanyProposalVO">
+		<![CDATA[
+			UPDATE
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND EST_BRK_MEM_OFC_SEQNO = #{estBrkMemOfcSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+	
+	<!-- Admin - 회원별 기업이전 제안서 목록조회 ( 페이징 ) -->
+	<select id="getMemCompPrpslItems" parameterType="CompanyProposalVO" resultType="CompanyProposalVO">
+		<![CDATA[
+			SELECT
+				L.ROWNUM,
+				L.MEM_SEQNO,
+				L.EMAIL,
+				L.MEM_NAME,
+				L.OFC_NM,
+				L.PRPSL_CNT,
+				DATE_FORMAT( L.RECENT_DTTM, '%Y.%m.%d' ) AS RECENT_DT,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						(
+							SELECT
+								M.MEM_SEQNO
+							FROM
+								TB_MEMBER M
+									INNER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+										ON M.MEM_SEQNO = EBM.MEM_SEQNO
+									INNER JOIN TB_COMPANY_MOVE_PROPOSAL_PROPERTY CMP
+										ON EBM.EST_BRK_MEM_OFC_SEQNO = CMP.EST_BRK_MEM_OFC_SEQNO
+							WHERE
+								M.DEL_YN = 'N'
+								AND M.MEM_TYP_CD = 'E'					/* 중개회원만 */
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+								AND (
+										M.MEM_NAME LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										EBM.OFC_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+										OR
+										EBM.TEL_NO LIKE CONCAT( '%', #{srchVal}, '%' )
+								)
+			</if>
+		<![CDATA[
+								AND CMP.DEL_YN = 'N'
+							GROUP BY
+								M.MEM_SEQNO
+						) G
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@NUM := @NUM + 1 AS RNUM,
+						T.ROWNUM,
+						T.MEM_SEQNO,
+						T.EMAIL,
+						T.MEM_NAME,
+						T.OFC_NM,
+						T.PRPSL_CNT,
+						T.RECENT_DTTM
+					FROM
+						(
+							SELECT
+								@NUM := 0 AS RNUM,
+								@RNUM := @RNUM + 1 AS ROWNUM,
+								F.MEM_SEQNO,
+								F.EMAIL,
+								F.MEM_NAME,
+								F.OFC_NM,
+								F.PRPSL_CNT,
+								F.RECENT_DTTM
+							FROM
+								(
+									SELECT
+										@RNUM := 0 AS ROWNUM,
+										G.MEM_SEQNO,
+										G.EMAIL,
+										G.MEM_NAME,
+										G.OFC_NM,
+										G.PRPSL_CNT,
+										G.RECENT_DTTM
+									FROM
+										(
+											SELECT
+												M.MEM_SEQNO,
+												M.EMAIL,
+												M.MEM_NAME,
+												EBM.OFC_NM,
+												COUNT(1) AS PRPSL_CNT,
+												MAX( CMP.REG_DTTM ) AS RECENT_DTTM
+											FROM
+												TB_MEMBER M
+													INNER JOIN TB_ESTATE_BROKER_MEMBER_OFFICE_INFO EBM
+														ON M.MEM_SEQNO = EBM.MEM_SEQNO
+													INNER JOIN TB_COMPANY_MOVE_PROPOSAL_PROPERTY CMP
+														ON EBM.EST_BRK_MEM_OFC_SEQNO = CMP.EST_BRK_MEM_OFC_SEQNO
+											WHERE
+												M.DEL_YN = 'N'
+												AND M.MEM_TYP_CD = 'E'					/* 중개회원만 */
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+												AND (
+														M.MEM_NAME LIKE CONCAT( '%', #{srchVal}, '%' )
+														OR
+														EBM.OFC_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+														OR
+														EBM.TEL_NO LIKE CONCAT( '%', #{srchVal}, '%' )
+												)
+			</if>
+		<![CDATA[
+												AND CMP.DEL_YN = 'N'
+											GROUP BY
+												M.MEM_SEQNO
+										) G
+									ORDER BY
+										G.RECENT_DTTM DESC
+									LIMIT #{edRnum}
+								) F
+							ORDER BY
+								F.RECENT_DTTM
+						) T
+					ORDER BY
+						T.RECENT_DTTM DESC
+				) L
+			WHERE
+				L.RNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.RNUM
+		]]>
+	</select>
+	
+	<!-- 기업명 조회 -->
+	<select id="getCompNm" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				COMP_NM
+			FROM
+				TB_ESTATE_BROKER_MEMBER_COMPANY
+			WHERE
+				COMP_SEQNO = #{compSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</select>
+	
+	<!-- 기업 이전 제안메물 지번주소 그룹핑 목록조회 ( 최대 6건 ) -->
+	<select id="getCompMovPrpslAddressGroup6List" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				GRP_ADDR
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY
+			WHERE
+				COMP_SEQNO = #{compSeqno}
+				AND DEL_YN = 'N'
+			GROUP BY
+				GRP_ADDR
+			ORDER BY
+				GRP_ADDR
+			LIMIT 6
+		]]>
+	</select>
+	
+	<!-- 기업이전 제안매물 목록조회 ( 최대 6건 ) -->
+	<select id="getCompMovPrpslPrpt6ListOfGrpAddr" parameterType="CompanyProposalVO" resultType="CompanyProposalVO">
+		<![CDATA[
+			SELECT
+				P.MOV_PRPSL_PRPT_SEQNO,
+				P.BLD_NM,
+				(
+					SELECT
+						FILE_URL
+					FROM
+						TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS
+					WHERE
+						MOV_PRPSL_PRPT_SEQNO = P.MOV_PRPSL_PRPT_SEQNO
+						AND PHOTO_GB = 'O'
+						AND DEL_YN = 'N'
+				) AS FILE_URL,
+				P.ADDR,
+				P.ROAD_ADDR,
+				P.LAT,
+				P.LNG,
+				P.PRV_AREA,
+				P.FLR,
+				P.ALL_FLR,
+				P.PSBL_MOV_DAY_TYP_CD,
+				C1.ITEM_CD_NM AS PSBL_MOV_DAY_TYP_NM,
+				COALESCE( DATE_FORMAT( P.PSBL_MOV_DATE, '%Y.%m.%d' ), '' ) AS PSBL_MOV_DATE,
+				P.PARKING_CAR_CNT,
+				(
+					SELECT
+						GROUP_CONCAT( SC.ITEM_CD_NM ORDER BY SC.SORT_SERL SEPARATOR ', ' )
+					FROM
+						TB_COMPANY_MOVE_PROPOSAL_PROPERTY_FACILITY_TYPS F
+							INNER JOIN TB_COMN_CD SC
+								ON SC.COMN_CD = 'COMP_PRPSL_BLD_FAC_TYP_CD'
+								AND F.COMP_PRPSL_BLD_FAC_TYP_CD = SC.ITEM_CD
+					WHERE
+						F.MOV_PRPSL_PRPT_SEQNO = 2
+				) AS FAC_TYP_DSCR,
+				P.TRAN_TYP_GB_CD,
+				C2.ITEM_CD_NM AS TRAN_TYP_GB_NM,
+				P.SALES_COST,
+				P.DPST_AMT,
+				P.MONT_RENT_AMT,
+				P.PRMM_AMT,
+				P.ACQSTN_TAX_RATIO,
+				P.SUPPRT_AMT,
+				P.ETC_COST,
+				P.BLD_SPCL_ADVTG_DSCR,
+				P.REQ_DSCR,
+				P.INVEST_YN,
+				P.LOAN_RATIO1,
+				P.LOAN_RATIO2,
+				P.LOAN_INTR_RATIO,
+				P.INVEST_DPST_AMT,
+				P.INVEST_MONT_RENT_AMT,
+				P.MON_MNTNCE_COST
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY P
+					INNER JOIN TB_COMN_CD C1
+						ON C1.COMN_CD = 'PSBL_MOV_DAY_TYP_CD'
+						AND P.PSBL_MOV_DAY_TYP_CD = C1.ITEM_CD
+					INNER JOIN TB_COMN_CD C2
+						ON C2.COMN_CD = 'COMP_PRPSL_TRAN_TYP_GB_CD'
+						AND P.TRAN_TYP_GB_CD = C2.ITEM_CD
+			WHERE
+				P.COMP_SEQNO = #{compSeqno}
+				AND P.GRP_ADDR = #{grpAddr}
+				AND P.DEL_YN = 'N'
+			ORDER BY
+				P.REG_DTTM DESC
+			LIMIT 6
+		]]>
+	</select>
+	
+	<!-- 건물내부사진 목록조회 -->
+	<select id="getCompMovPrpslPrptInnerPhotoList" parameterType="Long" resultType="String">
+		<![CDATA[
+			SELECT
+				FILE_URL
+			FROM
+				TB_COMPANY_MOVE_PROPOSAL_PROPERTY_PHOTOS
+			WHERE
+				MOV_PRPSL_PRPT_SEQNO = #{movPrpslPrptSeqno}
+				AND PHOTO_GB = 'I'
+				AND DEL_YN = 'N'
+			ORDER BY
+				SORT_SERL
+		]]>
+	</select>
+</mapper>

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="TestMapper">
+
+	<select id="getServerTime" resultType="String">
+		<![CDATA[
+			SELECT DATE_FORMAT( NOW(), '%Y-%m-%d %H:%i:%s' )
+		]]>
+	</select>
+	
+	<!-- 공인중개사 사무소 업데이트 유형 조회 -->
+	<select id="getEstateBrokerOfficeDataUpdateType" parameterType="EstateBrokerOfficeVO" resultType="String">
+		<![CDATA[
+			SELECT
+				CASE
+					WHEN DATA_STND_DATE < STR_TO_DATE( #{dataStndDate}, '%Y%m%d' )
+						THEN 'UPDATE'
+					ELSE
+						'NONE'
+				END AS UPDATE_TYP
+			FROM
+				TB_ESTATE_BROKER_OFFICE
+			WHERE
+				OPEN_REG_NO = #{openRegNo}
+				AND OFC_NM = #{ofcNm}
+		]]>
+	</select>
+	
+	<!-- 공인중개사 사무소 정보 등록 -->
+	<insert id="registerEstateBrokerOffice" parameterType="EstateBrokerOfficeVO">
+		<![CDATA[
+			INSERT INTO	TB_ESTATE_BROKER_OFFICE
+				(
+					OPEN_REG_NO,
+					OPEN_REG_DATE,
+					OPEN_EST_BRK_CLAS_GB,
+					OFC_NM,
+					MTL_JOIN_YN,
+					REPR_NM,
+					TEL_NO,
+					ADDR_ROAD,
+					ADDR_POST,
+					EST_BRK_CNT,
+					EST_ASST_CNT,
+					LAT,
+					LNG,
+					DATA_STND_DATE,
+					OFFR_INST_CD,
+					OFFR_INST_NM,
+					MOD_DTTM
+				)
+			VALUES
+				(
+					#{openRegNo},
+					STR_TO_DATE( #{openRegDate}, '%Y%m%d' ),
+					#{openEstBrkClasGb},
+					#{ofcNm},
+					#{mltJoinYn},
+					#{reprNm},
+					#{telNo},
+					#{addrRoad},
+					#{addrPost},
+					#{estBrkCnt},
+					#{estAsstCnt},
+					#{lat},
+					#{lng},
+					STR_TO_DATE( #{dataStndDate}, '%Y%m%d' ),
+					#{offrInstCd},
+					#{offrInstNm},
+					NOW()
+				)
+		]]>
+	</insert>
+	
+	<!-- 공인중개사 사무소 정보 업데이트 -->
+	<update id="updateEstateBrokerOffice" parameterType="EstateBrokerOfficeVO">
+		<![CDATA[
+			UPDATE
+				TB_ESTATE_BROKER_OFFICE
+			SET
+				OPEN_REG_DATE = STR_TO_DATE( #{openRegDate}, '%Y%m%d' ),
+				OPEN_EST_BRK_CLAS_GB = #{openEstBrkClasGb},
+				MTL_JOIN_YN = #{mltJoinYn},
+				REPR_NM = #{reprNm},
+				TEL_NO = #{telNo},
+				ADDR_ROAD = #{addrRoad},
+				ADDR_POST = #{addrPost},
+				EST_BRK_CNT = #{estBrkCnt},
+				EST_ASST_CNT = #{estAsstCnt},
+				LAT = #{lat},
+				LNG = #{lng},
+				DATA_STND_DATE = STR_TO_DATE( #{dataStndDate}, '%Y%m%d' ),
+				OFFR_INST_CD = #{offrInstCd},
+				OFFR_INST_NM = #{offrInstNm},
+				MOD_DTTM = NOW()
+			WHERE
+				OPEN_REG_NO = #{openRegNo}
+				AND OFC_NM = #{ofcNm}
+		]]>
+	</update>
+	
+	<!-- 지식산업센터 매물 등록 -->
+	<insert id="registerKnowlegdeIndustryComplex" parameterType="KnowledgeIndustryComplexVO">
+		<![CDATA[
+			INSERT INTO TB_KNOWLEDGE_INDUSTRY_COMPLEX
+				(
+					PRPT_REG_NO,
+					ADDR,
+					LAT,
+					LNG,
+					BLD_NM,
+					CMPLTN_DATE,
+					ASK_SALES_MIN_PRC,
+					ASK_SALES_AVG_PRC,
+					ASK_SALES_MAX_PRC,
+					ASK_LEASE_MIN_PRC,
+					ASK_LEASE_AVG_PRC,
+					ASK_LEASE_MAX_PRC,
+					LND_AREA,
+					BLD_AREA,
+					TOT_FLR_AREA,
+					MIN_FLR,
+					MAX_FLR,
+					PARKING_CAR_CNT,
+					HUS_HOLD_CNT,
+					DEV_COMP_NM,
+					CONST_COMP_NM,
+					TRFC_INFO,
+					SITE_EXPLNTN,
+					SMPL_SMR_DSCR,
+					REG_MEM_SEQNO
+				)
+			VALUES
+				(
+					#{prptRegNo},
+					#{addr},
+					#{lat},
+					#{lng},
+					#{bldNm},
+					STR_TO_DATE( #{cmpltnDate}, '%Y-%m-%d' ),
+					#{askSalesMinPrc},
+					#{askSalesAvgPrc},
+					#{askSalesMaxPrc},
+					#{askLeaseMinPrc},
+					#{askLeaseAvgPrc},
+					#{askLeaseMaxPrc},
+					#{lndArea},
+					#{bldArea},
+					#{totFlrArea},
+					#{minFlr},
+					#{maxFlr},
+					#{parkingCarCnt},
+					#{husHoldCnt},
+					#{devCompNm},
+					#{constCompNm},
+					#{trfcInfo},
+					#{siteExplntn},
+					#{smplSmrDscr},
+					0
+				)
+		]]>
+	</insert>
+	
+	<!-- 지식산업센터 전체 목록조회 -->
+	<select id="getAllKnowledgeIndustryComplexList" resultType="KnowledgeIndustryComplexVO">
+		<![CDATA[
+			SELECT
+				KNWLDG_IND_CMPLX_SEQNO,
+				ADDR
+			FROM
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX
+			ORDER BY
+				KNWLDG_IND_CMPLX_SEQNO
+		]]>
+	</select>
+	
+	<!-- 매물 전체 목록조회 -->
+	<select id="getAllPropertyList" resultType="PropertyVO">
+		<![CDATA[
+			SELECT
+				PRPT_SEQNO,
+				ADDR
+			FROM
+				TB_PROPERTY
+			ORDER BY
+				PRPT_SEQNO
+		]]>
+	</select>
+	
+	<!-- 지식산업센터 단축주소 업데이트 -->
+	<update id="updateAddrShortNmToKnowledgeIndustryComplex" parameterType="KnowledgeIndustryComplexVO">
+		<![CDATA[
+			UPDATE
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX
+			SET
+				ADDR_SHORT_NM = #{addrShortNm}
+			WHERE
+				KNWLDG_IND_CMPLX_SEQNO = #{knwldgIndCmplxSeqno}
+		]]>
+	</update>
+	
+	<!-- 매물 단축주소 업데이트 -->
+	<update id="updateAddrShortNmToProperty" parameterType="PropertyVO">
+		<![CDATA[
+			UPDATE
+				TB_PROPERTY
+			SET
+				ADDR_SHORT_NM = #{addrShortNm}
+			WHERE
+				PRPT_SEQNO = #{prptSeqno}
+		]]>
+	</update>
+</mapper>

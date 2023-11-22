@@ -1,0 +1,68 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.14'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+	id 'war'
+}
+
+group = 'com.gsntalk.api'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+bootWar {
+	archiveBaseName = 'gsntalk'
+	archiveFileName = 'gsntalk-api.war'
+	archiveVersion = '0.0.1'
+}
+
+configurations {
+	developmentOnly
+	runtimeClasspath {
+		extendsFrom developmentOnly
+	}
+	all {
+		exclude group : 'org.springframework.boot', module : 'spring-boot-starter-logging'		
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.1'
+	implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+	
+	implementation group: 'org.mybatis', name: 'mybatis', version: '3.5.9'
+	implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+	implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+	implementation group: 'net.coobird', name: 'thumbnailator', version: '0.4.19'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2', version: '2.7.14'
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.1'
+	implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.10.1'
+	implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.5'
+	implementation group: 'org.jsoup', name: 'jsoup', version: '1.16.1'
+	implementation group: 'org.apache.poi', name: 'poi', version: '5.2.3'
+	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.3'
+	implementation group: 'xerces', name: 'xercesImpl', version: '2.12.2'
+	implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.543'
+	
+	implementation group: 'com.pdfcrowd', name: 'pdfcrowd', version: '5.16.0'
+	
+	implementation group: 'com.openhtmltopdf', name: 'openhtmltopdf-core', version: '1.0.10'
+	implementation group: 'com.openhtmltopdf', name: 'openhtmltopdf-pdfbox', version: '1.0.10'
+	
+	runtimeOnly 'com.mysql:mysql-connector-j:8.1.0'
+	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.5'
+	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
+	
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+	useJUnitPlatform()
+}

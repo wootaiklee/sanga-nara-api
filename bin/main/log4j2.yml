@@ -1,0 +1,46 @@
+Configutation:
+  name: Default
+  status: info
+
+  Properties:
+    Property:
+      name: log-path
+      value: "./src/main/resources/logs"
+
+  Appenders:
+    Console:
+      name: Console_Appender
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "%d{yyyyMMdd HH:mm:ss} [%-5p] %C{1}.%M (%L) | %m%n"
+    File:
+      name: File_Appender
+      fileName: ${log-path}/gsntalk-api.log
+      PatternLayout:
+        pattern: "%d{yyyyMMdd HH:mm:ss} [%-5p] %C{1}.%M (%L) | %m%n"
+    RollingFile:
+      - name: RollingFile_Appender
+        fileName: ${log-path}/rollingfile.log
+        filePattern: "/app/gsntalk/api/logs/archive/{yyyy-MM}/rollingfile.log.%d{yyyy-MM-dd-hh-mm}.gz"
+        PatternLayout:
+          pattern: "%d{yyyyMMdd HH:mm:ss} [%-5p] %C{1}.%M (%L) | %m%n"
+        Policies:
+          SizeBasedTriggeringPolicy:
+            size: 1 KB
+        DefaultRollOverStrategy:
+          max: 30
+  Loggers:
+    Root:
+      level: info
+      AppenderRef:
+        - ref: Console_Appender
+        - ref: File_Appender
+        - ref: RollingFile_Appender
+    Logger:
+      - name: com.gsntalk.api
+        additivity: false
+        level: info
+        AppenderRef:
+          - ref: Console_Appender
+          - ref: File_Appender
+          - ref: RollingFile_Appender

@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CommunityMapper">
+
+
+    <!-- 커뮤니티 게시글 등록 -->
+    <insert id="registerCommunityPost" parameterType="CommunityPostVO">
+        <![CDATA[
+            INSERT INTO TB_COMMUNITY_POST
+            (
+                 MEM_SEQNO,
+                 COMU_NOTI_YN,
+                 COMU_TYPE_CD,
+                 COMU_PREF_CD,
+                 COMU_TITLE,
+                 COMU_CONTENTS,
+                 COMU_VIDEO_URL
+            )
+            VALUE
+            (
+                #{memSeqno},
+                #{comuNotiYn},
+                #{comuTypeCd},
+                #{comuPrefCd},
+                #{comuTitle},
+                #{comuContents},
+                #{comuVideoUrl}
+            )
+        ]]>
+        <selectKey keyProperty="comuSeqno" resultType="Long" order="AFTER">
+            SELECT
+            MAX( COMU_SEQNO ) AS COMU_SEQNO
+            FROM
+            TB_COMMUNITY_POST
+        </selectKey>
+    </insert>
+
+    <!-- 커뮤니티 게시글 이미지 등록 -->
+    <insert id="registerCommunityAttachImg" parameterType="CommunityAttachImgVO" >
+        <![CDATA[
+            INSERT INTO TB_COMMUNITY_ATTACH_IMG
+                (
+                    COMU_SEQNO,
+                    UPLOAD_FILE_NM,
+                    SAVE_FILE_NM,
+                    FILE_URL,
+                    SORT_SERL
+                ) VALUE (
+                    #{comuSeqno},
+                    #{uploadFileNm},
+                    #{saveFileNm},
+                    #{fileUrl},
+                    #{sortSerl}
+                )
+        ]]>
+    </insert>
+
+    <!-- 커뮤니티 게시글 수정 -->
+    <update id="updateCommunityPost" parameterType="CommunityPostVO">
+		<![CDATA[
+        UPDATE
+            TB_COMMUNITY_POST
+        SET
+        ]]>
+        <if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(comuNotiYn)">
+            COMU_NOTI_YN = #{comuNotiYn},
+        </if>
+        <![CDATA[
+            COMU_PREF_CD = #{comuPrefCd},
+            COMU_TITLE = #{comuTitle},
+            COMU_CONTENTS = #{comuContents},
+            MOD_DTTM = NOW(),
+            MOD_MEM_SEQNO = #{modMemSeqno}
+        WHERE
+            COMU_SEQNO = #{comuSeqno}
+        ]]>
+    </update>
+
+    <!-- 커뮤니티 첨부 이미지 정렬순서 수정 -->
+    <update id="updateCommunityAttachImgSortSerl" parameterType="CommunityAttachImgVO">
+		<![CDATA[
+        UPDATE
+            TB_COMMUNITY_ATTACH_IMG
+        SET
+            SORT_SERL = #{sortSerl}
+        WHERE
+            COMU_SEQNO = #{comuSeqno}
+          AND SAVE_FILE_NM = #{saveFileNm}
+        ]]>
+    </update>
+
+    <!-- 커뮤니티 게시글 삭제 -->
+    <update id="deleteCommunityPost" parameterType="CommunityPostVO">
+		<![CDATA[
+            UPDATE
+                TB_COMMUNITY_POST
+            SET
+                DEL_YN = 'Y',
+                MOD_DTTM = NOW(),
+                MOD_MEM_SEQNO = #{modMemSeqno}
+            WHERE
+                COMU_SEQNO = #{comuSeqno}
+        ]]>
+    </update>
+
+    <!-- 커뮤니티 댓글 삭제 ( 해당 게시글 전부 )  -->
+    <update id="deleteCommunityReplyBycomuSeqno" parameterType="CommunityReplyVO">
+		<![CDATA[
+            UPDATE
+                TB_COMMUNITY_REPLY
+            SET
+                DEL_YN = 'Y',
+                MOD_DTTM = NOW(),
+                MOD_MEM_SEQNO = #{modMemSeqno}
+
+            WHERE
+                COMU_SEQNO = #{comuSeqno}
+        ]]>
+    </update>
+
+    <!-- 커뮤니티 첨부 이미지 삭제 -->
+    <update id="deleteCommunityAttachImgBycomuSeqno" parameterType="Long">
+		<![CDATA[
+            UPDATE
+                TB_COMMUNITY_ATTACH_IMG
+            SET
+                DEL_YN = 'Y'
+            WHERE
+                COMU_SEQNO = #{comuSeqno}
+        ]]>
+    </update>
+
+    <!-- 커뮤니티 첨부 이미지 삭제 ( 저장파일명이 동일한 파일 ) -->
+    <update id="deleteCommunityAttachImgBySaveFileName" parameterType="CommunityAttachImgVO">
+		<![CDATA[
+        UPDATE
+            TB_COMMUNITY_ATTACH_IMG
+        SET
+            DEL_YN = 'Y'
+        WHERE
+            COMU_SEQNO = #{comuSeqno}
+        AND SAVE_FILE_NM = #{saveFileNm}
+        ]]>
+    </update>
+
+    <!-- 커뮤니티 게시글 상세 조회 -->
+    <select id="getCommunityPostInfo" resultType="CommunityPostVO" parameterType="Long" >
+        <![CDATA[
+            SELECT
+                CP.COMU_SEQNO,
+                CP.MEM_SEQNO,
+                CP.COMU_NOTI_YN,
+                CP.COMU_TYPE_CD,
+                M.MEM_NAME,
+                CP.COMU_PREF_CD,
+                CP.COMU_TITLE,
+                CP.COMU_CONTENTS,
+                CP.COMU_VIDEO_URL,
+                CP.COMU_VIEW_CNT,
+                CP.COMU_LIKE_CNT,
+                CP.COMU_REPLY_CNT,
+                CP.REG_DTTM,
+                CP.MOD_DTTM,
+                CP.DEL_YN
+            FROM
+                TB_COMMUNITY_POST CP
+                    INNER JOIN TB_MEMBER M ON CP.MEM_SEQNO = M.MEM_SEQNO
+            WHERE
+                CP.COMU_SEQNO = #{comuSeqno}
+            AND CP.DEL_YN = 'N'
+        ]]>
+    </select>
+
+    <!-- 커뮤니티 이미지 목록 조회 -->
+    <select id="getCommunityAttachImgList" resultType="CommunityAttachImgVO" parameterType="Long">
+        <![CDATA[
+            SELECT
+                COMU_SEQNO,
+                SAVE_FILE_NM,
+                FILE_URL,
+                SORT_SERL
+            FROM
+                TB_COMMUNITY_ATTACH_IMG
+            WHERE
+                COMU_SEQNO = #{comuSeqno}
+                AND DEL_YN = 'N'
+            ORDER BY SORT_SERL ASC
+        ]]>
+    </select>
+
+    <!-- 커뮤니티 게시글 목록 조회-->
+    <select id="getCommunityPostList" parameterType="CommunityPostVO" resultType="CommunityPostVO" >
+        <![CDATA[
+            SELECT
+                L.ROWNUM,
+                L.COMU_SEQNO,
+                L.COMU_NOTI_YN,
+                L.COMU_TYPE_CD,
+                L.MEM_SEQNO,
+                L.MEM_NAME,
+                L.PRFL_IMG_URL,
+                L.COMU_PREF_CD,
+                (SELECT ITEM_CD_NM FROM TB_COMN_CD WHERE COMN_CD = 'COMU_PREF_CD' AND ITEM_CD = L.COMU_PREF_CD  ) COMU_PREF_NM,
+                (SELECT FILE_URL FROM TB_COMMUNITY_ATTACH_IMG AI WHERE AI.COMU_SEQNO = L.COMU_SEQNO ORDER BY SORT_SERL ASC LIMIT 1 ) AS REP_IMG_URL,
+                L.COMU_TITLE,
+                L.COMU_CONTENTS,
+                L.COMU_VIEW_CNT,
+                L.COMU_LIKE_CNT,
+                L.COMU_REPLY_CNT,
+                #{srchVal} AS SRCH_VAL,
+                DATE_FORMAT( L.REG_DTTM, '%Y.%m.%d %H:%i' ) AS REG_DTTM,
+                DATE_FORMAT( L.MOD_DTTM, '%Y.%m.%d %H:%i' ) AS MOD_DTTM,
+                (
+                    SELECT
+                        COUNT(*)
+                    FROM
+                        TB_COMMUNITY_POST CP
+                            INNER JOIN TB_MEMBER M ON CP.MEM_SEQNO = M.MEM_SEQNO
+                    WHERE
+                        CP.DEL_YN = 'N'
+                        AND COMU_NOTI_YN = 'N'
+		]]>
+        <if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(comuTypeCd) ">
+                        AND COMU_TYPE_CD = #{comuTypeCd}
+        </if>
+        <if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(memSeqno) and memSeqno != 0">
+                        AND CP.MEM_SEQNO = #{memSeqno}
+        </if>
+        <if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(comuPrefCd) ">
+                        AND CP.COMU_PREF_CD = #{comuPrefCd}
+        </if>
+        <if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(comuTitle) ">
+                        AND CP.COMU_TITLE LIKE CONCAT( '%', #{comuTitle}, '%')
+        </if>
+        <if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+            <choose>
+                <when test=' srchDateType == "W" '>
+                        AND CP.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+                </when>
+                <when test=' srchDateType == "M" '>
+                        AND CP.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+                </when>
+                <when test=' srchDateType == "Y" '>
+                        AND CP.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+                </when>
+            </choose>
+        </if>
+        <if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+                        AND (
+                            CP.COMU_TITLE LIKE CONCAT( '%', #{srchVal} , '%' )
+                            OR
+                            M.MEM_NAME LIKE CONCAT( '%', #{srchVal} , '%' )
+                        )
+        </if>
+		<![CDATA[
+                ) AS TOTAL_COUNT
+            FROM
+                (
+                    SELECT
+                        @RNUM := @RNUM + 1 AS ROWNUM,
+                        T.COMU_SEQNO,
+                        T.COMU_NOTI_YN,
+                        T.COMU_TYPE_CD,
+                        T.MEM_SEQNO,
+                        T.MEM_NAME,
+                        T.PRFL_IMG_URL,
+                        T.COMU_PREF_CD,
+                        T.COMU_TITLE,
+                        T.COMU_CONTENTS,
+                        T.COMU_VIEW_CNT,
+                        T.COMU_LIKE_CNT,
+                        T.COMU_REPLY_CNT,
+                        T.REG_DTTM,
+                        T.MOD_DTTM
+                    FROM
+                        (
+                            SELECT
+                                @RNUM := 0 AS RNUM,
+                                CP.COMU_SEQNO,
+                                CP.COMU_NOTI_YN,
+                                CP.COMU_TYPE_CD,
+                                M.MEM_SEQNO,
+                                M.MEM_NAME,
+                                M.PRFL_IMG_URL,
+                                CP.COMU_PREF_CD,
+                                CP.COMU_TITLE,
+                                CP.COMU_CONTENTS,
+                                CP.COMU_VIEW_CNT,
+                                CP.COMU_LIKE_CNT,
+                                CP.COMU_REPLY_CNT,
+                                CP.REG_DTTM,
+                                CP.MOD_DTTM
+                            FROM
+                                TB_COMMUNITY_POST CP
+                                    INNER JOIN TB_MEMBER M ON CP.MEM_SEQNO = M.MEM_SEQNO
+                            WHERE
+                                CP.DEL_YN = 'N'
+                                AND COMU_NOTI_YN = 'N'
+		]]>
+        <if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(comuTypeCd) ">
+                                AND COMU_TYPE_CD = #{comuTypeCd}
+        </if>
+        <if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(memSeqno) and memSeqno != 0">
+                                AND CP.MEM_SEQNO = #{memSeqno}
+        </if>
+        <if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(comuPrefCd) ">
+                                AND CP.COMU_PREF_CD = #{comuPrefCd}
+        </if>
+        <if test=" !@com.gsntalk.api.util.GsntalkUtil@isEmpty(comuTitle) ">
+                                AND CP.COMU_TITLE LIKE CONCAT( '%', #{comuTitle}, '%')
+        </if>
+        <if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+            <choose>
+                <when test=' srchDateType == "W" '>
+                                AND CP.REG_DTTM BETWEEN ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) - 1 ) AND ADDDATE( CURDATE(), - WEEKDAY( CURDATE()) + 5 ) -- 이번주 일 - 토
+                </when>
+                <when test=' srchDateType == "M" '>
+                                AND CP.REG_DTTM BETWEEN ( LAST_DAY( NOW() - INTERVAL 1 MONTH ) + INTERVAL 1 DAY ) AND LAST_DAY( NOW() ) -- 이번 달
+                </when>
+                <when test=' srchDateType == "Y" '>
+                                AND CP.REG_DTTM >= DATE_ADD( NOW(), INTERVAL - 1 YEAR ) -- 최근 1년
+                </when>
+            </choose>
+        </if>
+        <if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+                                AND (
+                                    CP.COMU_TITLE LIKE CONCAT( '%', #{srchVal} , '%' )
+                                    OR
+                                    M.MEM_NAME LIKE CONCAT( '%', #{srchVal} , '%' )
+                                )
+        </if>
+        <![CDATA[
+                                ORDER BY
+        ]]>
+        <choose>
+            <when test=' orderColumn == "S" '>
+                                    CP.COMU_SEQNO
+            </when>
+            <when test=' orderColumn == "L" '>
+                                    CP.COMU_LIKE_CNT
+            </when>
+            <when test=' orderColumn == "R" '>
+                                    CP.COMU_REPLY_CNT
+            </when>
+        </choose>
+        <choose>
+            <when test=' orderSort == "D" '>
+                                                DESC
+            </when>
+            <when test=' orderSort == "A" '>
+                                                ASC
+            </when>
+        </choose>
+        <![CDATA[
+                                LIMIT #{edRnum}
+                        ) AS T
+                    ORDER BY
+        ]]>
+        <choose>
+            <when test=' orderColumn == "S" '>
+                        T.COMU_SEQNO
+            </when>
+            <when test=' orderColumn == "L" '>
+                        T.COMU_LIKE_CNT
+            </when>
+            <when test=' orderColumn == "R" '>
+                        T.COMU_REPLY_CNT
+            </when>
+        </choose>
+        <choose>
+            <when test=' orderSort == "D" '>
+                                DESC
+            </when>
+            <when test=' orderSort == "A" '>
+                                ASC
+            </when>
+        </choose>
+        <![CDATA[
+                ) AS L
+            WHERE
+				L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+            ORDER BY
+                L.ROWNUM
+        ]]>
+    </select>
+
+    <!-- 커뮤니티 댓글 목록 조회 -->
+    <select id="getCommunityReplyList" resultType="CommunityReplyVO" parameterType="CommunityReplyVO">
+        <![CDATA[
+        SELECT
+            L.ROWNUM,
+            L.COMU_RE_SEQNO,
+            L.COMU_SEQNO,
+            L.MEM_SEQNO,
+            L.MEM_NAME,
+            L.PRFL_IMG_URL,
+            L.TO_MEM_SEQNO,
+            L.TO_MEM_NAME,
+            L.COMU_RE_CONTENTS,
+            DATE_FORMAT( L.REG_DTTM, '%Y.%m.%d' ) AS REG_DTTM,
+            DATE_FORMAT( L.MOD_DTTM, '%Y.%m.%d' ) AS MOD_DTTM,
+            (
+                SELECT
+                    COUNT(*)
+                FROM
+                    TB_COMMUNITY_REPLY CR
+                        INNER JOIN TB_MEMBER M ON CR.MEM_SEQNO = M.MEM_SEQNO
+                        LEFT OUTER JOIN TB_MEMBER MT ON CR.TO_MEM_SEQNO = MT.MEM_SEQNO
+                WHERE
+                    COMU_SEQNO = #{comuSeqno}
+                  AND M.DEL_YN = 'N'
+            ) AS TOTAL_COUNT
+        FROM
+            (
+                SELECT
+                    @RNUM := @RNUM + 1 AS ROWNUM,
+                        T.COMU_RE_SEQNO,
+                        T.COMU_SEQNO,
+                        T.MEM_SEQNO,
+                        T.MEM_NAME,
+                        T.PRFL_IMG_URL,
+                        T.TO_MEM_SEQNO,
+                        T.TO_MEM_NAME,
+                        T.COMU_RE_CONTENTS,
+                        T.REG_DTTM,
+                        T.MOD_DTTM
+                FROM
+                    (
+                        SELECT
+                            @RNUM := 0 AS RNUM,
+                            CR.COMU_RE_SEQNO,
+                            CR.COMU_SEQNO,
+                            CR.MEM_SEQNO,
+                            M.MEM_NAME,
+                            M.PRFL_IMG_URL,
+                            CR.TO_MEM_SEQNO,
+                            MT.MEM_NAME AS TO_MEM_NAME,
+                            CR.COMU_RE_CONTENTS,
+                            CR.REG_DTTM,
+                            CR.MOD_DTTM
+                        FROM
+                            TB_COMMUNITY_REPLY CR
+                            INNER JOIN TB_MEMBER M ON CR.MEM_SEQNO = M.MEM_SEQNO
+                            LEFT OUTER JOIN TB_MEMBER MT ON CR.TO_MEM_SEQNO = MT.MEM_SEQNO
+                        WHERE
+                            COMU_SEQNO = #{comuSeqno}
+                            AND M.DEL_YN = 'N'
+                        ORDER BY
+                            COMU_RE_SEQNO
+        ]]>
+            <choose>
+                <when test=' orderSort == "D" '>
+                                        DESC
+                </when>
+                <when test=' orderSort == "A" '>
+                                        ASC
+                </when>
+            </choose>
+        <![CDATA[
+                        LIMIT #{edRnum}
+                    ) AS T
+                ORDER BY
+                    T.COMU_RE_SEQNO
+        ]]>
+            <choose>
+                <when test=' orderSort == "D" '>
+                                DESC
+                </when>
+                <when test=' orderSort == "A" '>
+                                ASC
+                </when>
+            </choose>
+        <![CDATA[
+            ) AS L
+        WHERE
+            L.ROWNUM BETWEEN #{stRnum} AND #{edRnum}
+        ORDER BY
+            L.ROWNUM
+        ]]>
+    </select>
+
+    <!-- 커뮤니티 댓글 등록 -->
+    <insert id="registerCommunityReply" parameterType="CommunityReplyVO">
+        <![CDATA[
+            INSERT INTO TB_COMMUNITY_REPLY
+            (
+                 COMU_SEQNO,
+                 MEM_SEQNO,
+                 TO_MEM_SEQNO,
+                 COMU_RE_CONTENTS
+            ) VALUE (
+                #{comuSeqno},
+                #{memSeqno},
+                #{toMemSeqno},
+                #{comuReContents}
+            )
+        ]]>
+    </insert>
+
+    <!-- 커뮤니티 댓글 정보 조회 -->
+    <select id="getCommunityReplyInfo" resultType="CommunityReplyVO" parameterType="Long">
+        <![CDATA[
+
+        SELECT
+            COMU_RE_SEQNO,
+            COMU_SEQNO,
+            MEM_SEQNO,
+            TO_MEM_SEQNO,
+            COMU_RE_CONTENTS,
+            REG_DTTM,
+            MOD_DTTM,
+            MOD_MEM_SEQNO,
+            DEL_YN
+        FROM
+            TB_COMMUNITY_REPLY
+        WHERE
+            COMU_RE_SEQNO = #{comuReSeqno}
+            AND DEL_YN = 'N';
+        ]]>
+    </select>
+
+    <!-- 커뮤니티 댓글 수정 -->
+    <update id="updateCommunityReply" parameterType="CommunityReplyVO">
+        <![CDATA[
+            UPDATE
+                TB_COMMUNITY_REPLY
+            SET
+                TO_MEM_SEQNO = #{toMemSeqno},
+                COMU_RE_CONTENTS = #{comuReContents},
+                MOD_DTTM = NOW(),
+                MOD_MEM_SEQNO = #{modMemSeqno}
+            WHERE
+                COMU_RE_SEQNO = #{comuReSeqno}
+                AND COMU_SEQNO = #{comuSeqno}
+                AND MEM_SEQNO = #{memSeqno}
+        ]]>
+    </update>
+
+    <!-- 커뮤니티 댓글 삭제 -->
+    <update id="deleteCommunityReply" parameterType="CommunityReplyVO">
+        <![CDATA[
+            UPDATE
+                TB_COMMUNITY_REPLY
+            SET
+                DEL_YN = 'Y',
+                MOD_DTTM = NOW(),
+                MOD_MEM_SEQNO = #{modMemSeqno}
+            WHERE
+                COMU_RE_SEQNO = #{comuReSeqno}
+              AND COMU_SEQNO = #{comuSeqno}
+        ]]>
+    </update>
+
+    <!-- 말머리별 공지 갯수 조회 -->
+    <select id="getCommunityPostNoticeCnt" parameterType="String" resultType="Integer">
+        <![CDATA[
+            SELECT
+                COUNT(*)
+            FROM
+                TB_COMMUNITY_POST
+            WHERE
+                DEL_YN = 'N'
+              AND COMU_PREF_CD = #{comuPrefCd}
+              AND COMU_NOTI_YN = 'Y';
+        ]]>
+    </select>
+
+    <!-- 말머리별 오래된 공지 하나 공지해제 -->
+    <update id="updateCommunityPostOldNotice" parameterType="CommunityPostVO">
+        <![CDATA[
+            UPDATE
+                TB_COMMUNITY_POST
+            SET
+                COMU_NOTI_YN = 'N',
+                MOD_DTTM = NOW(),
+                MOD_MEM_SEQNO = #{modMemSeqno}
+            WHERE
+                COMU_SEQNO = (
+                    SELECT
+                        COMU_SEQNO
+                    FROM
+                        TB_COMMUNITY_POST
+                    WHERE
+                        DEL_YN = 'N'
+                        AND COMU_PREF_CD = #{comuPrefCd}
+                        AND COMU_NOTI_YN = 'Y'
+                    ORDER BY
+                        COMU_SEQNO ASC
+                    LIMIT 1
+                )
+            ]]>
+    </update>
+
+    <!-- 커뮤니티 게시글 공지로 수정 -->
+    <update id="updateCommunityPostNoticeYn" parameterType="CommunityPostVO">
+        <![CDATA[
+            UPDATE
+                TB_COMMUNITY_POST
+            SET
+                COMU_NOTI_YN = #{comuNotiYn},
+                MOD_DTTM = NOW(),
+                MOD_MEM_SEQNO = #{modMemSeqno}
+            WHERE
+                DEL_YN = 'N'
+                AND COMU_SEQNO = #{comuSeqno}
+        ]]>
+    </update>
+
+    <!-- 커뮤니티 게시글 카운트 수정 -->
+    <update id="updateCommunityPostCnt" parameterType="CommunityPostVO">
+        <![CDATA[
+            UPDATE
+                TB_COMMUNITY_POST
+            SET
+        ]]>
+        <choose>
+            <when test=' cntType == "R" '>
+                COMU_REPLY_CNT = COMU_REPLY_CNT
+            </when>
+            <when test=' cntType == "L" '>
+                COMU_LIKE_CNT = COMU_LIKE_CNT
+            </when>
+            <when test=' cntType == "V" '>
+                COMU_VIEW_CNT = COMU_VIEW_CNT
+            </when>
+        </choose>
+        <choose>
+            <when test=' cntState == "P" '>
+                +1
+            </when>
+            <when test=' cntState == "M" '>
+                -1
+            </when>
+        </choose>
+        <![CDATA[
+            WHERE
+                DEL_YN = 'N'
+              AND COMU_SEQNO = #{comuSeqno}
+        ]]>
+    </update>
+
+    <!-- 커뮤니티 게시글 공지사항 목록 조회 -->
+    <select id="getCommunityPostNoticeList" resultType="CommunityPostVO">
+        <![CDATA[
+            SELECT
+                CP.COMU_SEQNO,
+                CP.MEM_SEQNO,
+                M.MEM_NAME,
+                CP.COMU_TYPE_CD,
+                CP.COMU_TITLE,
+                CP.REG_DTTM,
+                CP.MOD_MEM_SEQNO
+            FROM
+                TB_COMMUNITY_POST CP
+                    INNER JOIN TB_MEMBER M ON CP.MEM_SEQNO = M.MEM_SEQNO
+            WHERE
+                COMU_NOTI_YN = 'Y'
+              AND M.DEL_YN = 'N'
+        ]]>
+    </select>
+
+
+
+
+</mapper>

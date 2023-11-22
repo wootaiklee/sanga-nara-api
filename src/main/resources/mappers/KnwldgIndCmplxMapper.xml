@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="KnwldgIndCmplxMapper">
+
+	<!-- 지식산업센터 상세정보 조회 -->
+	<select id="getKnwldgIndCmplxDtlItem" parameterType="Long" resultType="KnowledgeIndustryComplexVO">
+		<![CDATA[
+			SELECT
+				COALESCE( IMG.FILE_URL, '' ) AS VWMAP_IMG_URL,
+				COALESCE( IMG.UPLOAD_FILE_NM, '' ) AS ORG_FILE_NM,
+				KIC.ADDR,
+				KIC.ADDR_SHORT_NM,
+				KIC.LAT,
+				KIC.LNG,
+				KIC.BLD_NM,
+				DATE_FORMAT( KIC.CMPLTN_DATE, '%Y년 %m월 %d' ) AS CMPLTN_DATE,
+				KIC.ASK_SALES_MIN_PRC,
+				KIC.ASK_SALES_AVG_PRC,
+				KIC.ASK_SALES_MAX_PRC,
+				KIC.ASK_LEASE_MIN_PRC,
+				KIC.ASK_LEASE_AVG_PRC,
+				KIC.ASK_LEASE_MAX_PRC,
+				KIC.LND_AREA,
+				KIC.BLD_AREA,
+				KIC.TOT_FLR_AREA,
+				KIC.MIN_FLR,
+				KIC.MAX_FLR,
+				KIC.PARKING_CAR_CNT,
+				KIC.HUS_HOLD_CNT,
+				KIC.DEV_COMP_NM,
+				KIC.CONST_COMP_NM,
+				KIC.TRFC_INFO,
+				KIC.SITE_EXPLNTN,
+				KIC.SMPL_SMR_DSCR
+			FROM
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX KIC
+					LEFT OUTER JOIN TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES IMG
+						ON KIC.KNWLDG_IND_CMPLX_SEQNO = IMG.KNWLDG_IND_CMPLX_SEQNO
+						AND IMG.KNWLDG_CMPLX_ATCH_IMG_TYP_CD = 'VWMAP'							/* 조감도만 */
+			WHERE
+				KIC.KNWLDG_IND_CMPLX_SEQNO = #{knwldgIndCmplxSeqno}
+				AND KIC.DEL_YN = 'N'
+		]]>
+	</select>
+
+	<!-- 지식산업센터 첨부이미지 URL 목록조회 -->
+	<select id="getKnwldgIndCmplxImgUrlList" parameterType="AttachmentVO" resultType="AttachmentVO">
+		<![CDATA[
+			SELECT
+				FILE_URL,
+				UPLOAD_FILE_NM
+			FROM
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES
+			WHERE
+				KNWLDG_IND_CMPLX_SEQNO = #{knwldgIndCmplxSeqno}
+				AND KNWLDG_CMPLX_ATCH_IMG_TYP_CD = #{knwldgCmplxAtchImgTypCd}
+				AND DEL_YN = 'N'
+			ORDER BY
+				SAVE_FILE_NM
+		]]>
+	</select>
+	
+	<!-- 지식산업센터 등록  -->
+	<insert id="registerKnwldgIndCmplxItem" parameterType="KnowledgeIndustryComplexVO">
+		<![CDATA[
+			INSERT INTO TB_KNOWLEDGE_INDUSTRY_COMPLEX
+				(
+					PRPT_REG_NO,
+					ADDR,
+					ADDR_SHORT_NM,
+					LAT,
+					LNG,
+					BLD_NM,
+					CMPLTN_DATE,
+					ASK_SALES_MIN_PRC,
+					ASK_SALES_AVG_PRC,
+					ASK_SALES_MAX_PRC,
+					ASK_LEASE_MIN_PRC,
+					ASK_LEASE_AVG_PRC,
+					ASK_LEASE_MAX_PRC,
+					LND_AREA,
+					BLD_AREA,
+					TOT_FLR_AREA,
+					MIN_FLR,
+					MAX_FLR,
+					PARKING_CAR_CNT,
+					HUS_HOLD_CNT,
+					DEV_COMP_NM,
+					CONST_COMP_NM,
+					TRFC_INFO,
+					SITE_EXPLNTN,
+					SMPL_SMR_DSCR,
+					REG_MEM_SEQNO
+				)
+			VALUES
+				(
+					#{prptRegNo},
+					#{addr},
+					#{addrShortNm},
+					#{lat},
+					#{lng},
+					#{bldNm},
+					STR_TO_DATE( #{cmpltnDate}, '%Y%m%d' ),
+					#{askSalesMinPrc},
+					#{askSalesAvgPrc},
+					#{askSalesMaxPrc},
+					#{askLeaseMinPrc},
+					#{askLeaseAvgPrc},
+					#{askLeaseMaxPrc},
+					#{lndArea},
+					#{bldArea},
+					#{totFlrArea},
+					#{minFlr},
+					#{maxFlr},
+					#{parkingCarCnt},
+					#{husHoldCnt},
+					#{devCompNm},
+					#{constCompNm},
+					#{trfcInfo},
+					#{siteExplntn},
+					#{smplSmrDscr},
+					#{memSeqno}
+				)
+		]]>
+		<selectKey keyProperty="knwldgIndCmplxSeqno" resultType="Long" order="AFTER">
+			SELECT
+				MAX( KNWLDG_IND_CMPLX_SEQNO ) AS KNWLDG_IND_CMPLX_SEQNO
+			FROM
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX
+		</selectKey>
+	</insert>
+	
+	<!-- 지식산업센터 이미지 등록 -->
+	<insert id="registerKnwldgIndCmplxImage" parameterType="AttachmentVO">
+		<![CDATA[
+			INSERT INTO TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES
+				(
+					KNWLDG_IND_CMPLX_SEQNO,
+					KNWLDG_CMPLX_ATCH_IMG_TYP_CD,
+					UPLOAD_FILE_NM,
+					SAVE_FILE_NM,
+					FILE_URL
+				)
+			VALUES
+				(
+					#{knwldgIndCmplxSeqno},
+					#{knwldgCmplxAtchImgTypCd},
+					#{uploadFileNm},
+					#{saveFileNm},
+					#{fileUrl}
+				)
+		]]>
+	</insert>
+	
+	<!-- 지식산업센터 목록조회 ( 페이징 ) -->
+	<select id="getKnwldgIndCmplxItems" parameterType="KnowledgeIndustryComplexVO" resultType="KnowledgeIndustryComplexVO">
+		<![CDATA[
+			SELECT
+				L.ROWNUM,
+				L.KNWLDG_IND_CMPLX_SEQNO,
+				L.BLD_NM,
+				L.ADDR,
+				DATE_FORMAT( L.CMPLTN_DATE, '%Y.%m.%d' ) AS CMPLTN_DATE,
+				L.ASK_SALES_MIN_PRC,
+				L.ASK_SALES_AVG_PRC,
+				L.ASK_SALES_MAX_PRC,
+				L.ASK_LEASE_MIN_PRC,
+				L.ASK_LEASE_AVG_PRC,
+				L.ASK_LEASE_MAX_PRC,
+				L.SMPL_SMR_DSCR,
+				CASE
+					WHEN (
+							SELECT
+								COUNT(1)
+							FROM
+								TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES
+							WHERE
+								KNWLDG_IND_CMPLX_SEQNO = L.KNWLDG_IND_CMPLX_SEQNO
+								AND KNWLDG_CMPLX_ATCH_IMG_TYP_CD = 'FRMAP'				/* 층별도면 */
+								AND DEL_YN = 'N'
+						) > 0
+					THEN 'Y'
+					ELSE 'N'
+				END AS FRMAP_YN,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_KNOWLEDGE_INDUSTRY_COMPLEX
+					WHERE
+						DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+				<choose>
+					<when test='srchDateType == "W"'>
+		<![CDATA[
+						/* 이번 주 */
+						AND (
+								DATE_FORMAT( REG_DTTM, '%Y%m%d' )
+									BETWEEN DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) - 1 ), '%Y%m%d' ) AND DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) + 5 ), '%Y%m%d' )
+						)
+		]]>
+					</when>
+					<when test='srchDateType == "M"'>
+		<![CDATA[
+						/* 이번 달 */
+						AND DATE_FORMAT( REG_DTTM, '%Y%m' ) = DATE_FORMAT( NOW(), '%Y%m' )
+		]]>
+					</when>
+					<when test='srchDateType == "Y"'>
+		<![CDATA[
+						/* 1년 */
+						AND DATE_FORMAT( REG_DTTM, '%Y%m%d' ) > DATE_FORMAT( DATE_SUB( NOW(), INTERVAL 365 DAY ), '%Y%m%d' )
+		]]>
+					</when>
+				</choose>
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+		<![CDATA[
+						AND (
+								BLD_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								SMPL_SMR_DSCR LIKE CONCAT( '%', #{srchVal}, '%' )
+						)
+		]]>
+			</if>
+		<![CDATA[
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@NUM := @NUM + 1 AS RNUM,
+						T.ROWNUM,
+						T.KNWLDG_IND_CMPLX_SEQNO,
+						T.BLD_NM,
+						T.ADDR,
+						T.CMPLTN_DATE,
+						T.ASK_SALES_MIN_PRC,
+						T.ASK_SALES_AVG_PRC,
+						T.ASK_SALES_MAX_PRC,
+						T.ASK_LEASE_MIN_PRC,
+						T.ASK_LEASE_AVG_PRC,
+						T.ASK_LEASE_MAX_PRC,
+						T.SMPL_SMR_DSCR
+					FROM
+						(
+							SELECT
+								@NUM := 0 AS RNUM,
+								@RNUM := @RNUM + 1 AS ROWNUM,
+								F.KNWLDG_IND_CMPLX_SEQNO,
+								F.BLD_NM,
+								F.ADDR,
+								F.CMPLTN_DATE,
+								F.ASK_SALES_MIN_PRC,
+								F.ASK_SALES_AVG_PRC,
+								F.ASK_SALES_MAX_PRC,
+								F.ASK_LEASE_MIN_PRC,
+								F.ASK_LEASE_AVG_PRC,
+								F.ASK_LEASE_MAX_PRC,
+								F.SMPL_SMR_DSCR
+							FROM
+								(
+									SELECT
+										@RNUM := 0 AS ROWNUM,
+										KNWLDG_IND_CMPLX_SEQNO,
+										BLD_NM,
+										ADDR,
+										CMPLTN_DATE,
+										ASK_SALES_MIN_PRC,
+										ASK_SALES_AVG_PRC,
+										ASK_SALES_MAX_PRC,
+										ASK_LEASE_MIN_PRC,
+										ASK_LEASE_AVG_PRC,
+										ASK_LEASE_MAX_PRC,
+										SMPL_SMR_DSCR
+									FROM
+										TB_KNOWLEDGE_INDUSTRY_COMPLEX
+									WHERE
+										DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchDateType)">
+				<choose>
+					<when test='srchDateType == "W"'>
+		<![CDATA[
+										/* 이번 주 */
+										AND (
+												DATE_FORMAT( REG_DTTM, '%Y%m%d' )
+													BETWEEN DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) - 1 ), '%Y%m%d' ) AND DATE_FORMAT( ADDDATE( CURDATE(), - WEEKDAY(CURDATE()) + 5 ), '%Y%m%d' )
+										)
+		]]>
+					</when>
+					<when test='srchDateType == "M"'>
+		<![CDATA[
+										/* 이번 달 */
+										AND DATE_FORMAT( REG_DTTM, '%Y%m' ) = DATE_FORMAT( NOW(), '%Y%m' )
+		]]>
+					</when>
+					<when test='srchDateType == "Y"'>
+		<![CDATA[
+										/* 1년 */
+										AND DATE_FORMAT( REG_DTTM, '%Y%m%d' ) > DATE_FORMAT( DATE_SUB( NOW(), INTERVAL 365 DAY ), '%Y%m%d' )
+		]]>
+					</when>
+				</choose>
+			</if>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(srchVal)">
+		<![CDATA[
+										AND (
+												BLD_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+												OR
+												ADDR LIKE CONCAT( '%', #{srchVal}, '%' )
+												OR
+												SMPL_SMR_DSCR LIKE CONCAT( '%', #{srchVal}, '%' )
+										)
+		]]>
+			</if>
+		<![CDATA[
+									ORDER BY
+										KNWLDG_IND_CMPLX_SEQNO DESC
+									LIMIT #{edRnum}
+								) F
+							ORDER BY
+								F.KNWLDG_IND_CMPLX_SEQNO
+						) T
+					ORDER BY
+						T.KNWLDG_IND_CMPLX_SEQNO DESC
+				) L
+			WHERE
+				L.RNUM BETWEEN #{stRnum} AND #{edRnum}
+			ORDER BY
+				L.RNUM
+		]]>
+	</select>
+	
+	<!-- 지식산업센터 + 첨부 이미지 삭제 -->
+	<update id="deleteKnwldgIndCmplxItems" parameterType="Long">
+		<![CDATA[
+			UPDATE
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX KIC
+					LEFT OUTER JOIN TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES KICI
+						ON KIC.KNWLDG_IND_CMPLX_SEQNO = KICI.KNWLDG_IND_CMPLX_SEQNO
+			SET
+				KIC.DEL_YN = 'Y',
+				KICI.DEL_YN = 'Y'
+			WHERE
+				KIC.KNWLDG_IND_CMPLX_SEQNO = #{knwldgIndCmplxSeqno}
+		]]>
+	</update>
+	
+	<!-- 지식산업센터 이미지 - 조감도 삭제 -->
+	<update id="deleteKnwldgIndCmplxVwImage" parameterType="Long">
+		<![CDATA[
+			UPDATE
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				KNWLDG_IND_CMPLX_SEQNO = #{knwldgIndCmplxSeqno}
+				AND KNWLDG_CMPLX_ATCH_IMG_TYP_CD = 'VWMAP'
+		]]>
+	</update>
+	
+	<!-- 지식산업센터 이미지 삭제 -->
+	<update id="deleteKnwldgIndCmplxImage" parameterType="AttachmentVO">
+		<![CDATA[
+			UPDATE
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX_IMAGES
+			SET
+				DEL_YN = 'Y'
+			WHERE
+				KNWLDG_IND_CMPLX_SEQNO = #{knwldgIndCmplxSeqno}
+				AND KNWLDG_CMPLX_ATCH_IMG_TYP_CD = #{knwldgCmplxAtchImgTypCd}
+				AND FILE_URL = #{fileUrl}
+		]]>
+	</update>
+	
+	<!-- 지식산업센터 수정  -->
+	<update id="updateKnwldgIndCmplxItem" parameterType="KnowledgeIndustryComplexVO">
+		<![CDATA[
+			UPDATE
+				TB_KNOWLEDGE_INDUSTRY_COMPLEX
+			SET
+				ADDR = #{addr},
+				ADDR_SHORT_NM = #{addrShortNm},
+				LAT = #{lat},
+				LNG = #{lng},
+				BLD_NM = #{bldNm},
+				CMPLTN_DATE = STR_TO_DATE( #{cmpltnDate}, '%Y%m%d' ),
+				ASK_SALES_MIN_PRC = #{askSalesMinPrc},
+				ASK_SALES_AVG_PRC = #{askSalesAvgPrc},
+				ASK_SALES_MAX_PRC = #{askSalesMaxPrc},
+				ASK_LEASE_MIN_PRC = #{askLeaseMinPrc},
+				ASK_LEASE_AVG_PRC = #{askLeaseAvgPrc},
+				ASK_LEASE_MAX_PRC = #{askLeaseMaxPrc},
+				LND_AREA = #{lndArea},
+				BLD_AREA = #{bldArea},
+				TOT_FLR_AREA = #{totFlrArea},
+				MIN_FLR = #{minFlr},
+				MAX_FLR = #{maxFlr},
+				PARKING_CAR_CNT = #{parkingCarCnt},
+				HUS_HOLD_CNT = #{husHoldCnt},
+				DEV_COMP_NM = #{devCompNm},
+				CONST_COMP_NM = #{constCompNm},
+				TRFC_INFO = #{trfcInfo},
+				SITE_EXPLNTN = #{siteExplntn},
+				SMPL_SMR_DSCR = #{smplSmrDscr}
+			WHERE
+				KNWLDG_IND_CMPLX_SEQNO = #{knwldgIndCmplxSeqno}
+				AND DEL_YN = 'N'
+		]]>
+	</update>
+</mapper>

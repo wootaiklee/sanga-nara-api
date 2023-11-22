@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="GsntalkMapper">
+
+	<!-- 공통코드 목록조회 -->
+	<select id="getComnCdList" parameterType="String" resultType="CommonCodeVO">
+		<![CDATA[
+			SELECT
+				COMN_CD,
+				ITEM_CD,
+				ITEM_CD_NM,
+				RMK
+			FROM
+				TB_COMN_CD
+			WHERE
+				COMN_CD = #{comnCd}
+				AND DEL_YN = 'N'
+			ORDER BY
+				SORT_SERL
+		]]>
+	</select>
+
+	<!-- 단일 공통코드 목록조회 ( 상/하위코드 목록조회 ) -->
+	<select id="getSingleComnCdItems" parameterType="CommonCodeVO" resultType="CommonCodeVO">
+		<![CDATA[
+			SELECT
+				UP_ITEM_CD,
+				COMN_CD,
+				ITEM_CD,
+				ITEM_CD_NM,
+				RMK
+			FROM
+				TB_COMN_CD
+			WHERE
+				COMN_CD = #{itemCd}
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(upItemCd)">
+		<![CDATA[
+				AND UP_ITEM_CD = #{upItemCd}
+		]]>
+			</if>
+		<![CDATA[
+				AND DEL_YN = 'N'
+			ORDER BY
+				UP_ITEM_CD, SORT_SERL
+		]]>
+	</select>
+	
+	<!-- 중개사 사무소 검색 -->
+	<select id="srchEstBlkOfcItems" parameterType="EstateBrokerOfficeVO" resultType="EstateBrokerOfficeVO">
+		<![CDATA[
+			SELECT
+				L.ROWNUM,
+				L.EST_BRK_OFC_SEQNO,
+				L.OPEN_REG_NO,
+				DATE_FORMAT( L.OPEN_REG_DATE, '%Y-%m-%d' ) AS OPEN_REG_DATE,
+				L.OFC_NM,
+				L.REPR_NM,
+				CASE
+					WHEN COALESCE( L.ADDR_ROAD, '' ) != '' AND COALESCE( L.ADDR_POST, '' ) != ''
+						THEN L.ADDR_ROAD
+					WHEN COALESCE( L.ADDR_ROAD, '' ) != ''
+						THEN L.ADDR_ROAD
+					WHEN COALESCE( L.ADDR_POST, '' ) != ''
+						THEN L.ADDR_POST
+					ELSE
+						''
+				END AS ADDR,
+				L.TEL_NO,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_ESTATE_BROKER_OFFICE
+					WHERE
+						OFC_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+						OR
+						ADDR_ROAD  LIKE CONCAT( '%', #{srchVal}, '%' )
+						OR
+						ADDR_POST LIKE CONCAT( '%', #{srchVal}, '%' )
+				) AS TOTAL_COUNT
+			FROM
+				(
+					SELECT
+						@RNUM := @RNUM + 1 AS ROWNUM,
+						T.EST_BRK_OFC_SEQNO,
+						T.OPEN_REG_NO,
+						T.OPEN_REG_DATE,
+						T.OFC_NM,
+						T.REPR_NM,
+						T.ADDR_ROAD,
+						T.ADDR_POST,
+						T.TEL_NO
+					FROM
+						(
+							SELECT
+								@RNUM := 0 AS RNUM,
+								EST_BRK_OFC_SEQNO,
+								OPEN_REG_NO,
+								OPEN_REG_DATE,
+								OFC_NM,
+								REPR_NM,
+								ADDR_ROAD,
+								ADDR_POST,
+								TEL_NO
+							FROM
+								TB_ESTATE_BROKER_OFFICE
+							WHERE
+								OFC_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								ADDR_ROAD  LIKE CONCAT( '%', #{srchVal}, '%' )
+								OR
+								ADDR_POST LIKE CONCAT( '%', #{srchVal}, '%' )
+							ORDER BY
+								OFC_NM
+						) T
+					ORDER BY
+						T.OFC_NM
+				) L
+			WHERE
+				L.ROWNUM BETWEEN #{rownum} + 1 AND #{rownum} + #{cntPerPage}
+			ORDER BY
+				L.ROWNUM
+		]]>
+	</select>
+	
+	<!-- 등록단계별 임시저장 JSON 조회 -->
+	<select id="getTempdataOfRegistrationStepJson" parameterType="RegistrationTmpDataStepVO" resultType="String">
+		<![CDATA[
+			SELECT
+				TMP_JSON_DATA
+			FROM
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			WHERE
+				REG_CLAS_CD = #{regClasCd}
+		]]>
+			<if test="memSeqno != 0">
+				AND MEM_SEQNO = #{memSeqno}
+			</if>
+		<![CDATA[
+				AND REG_TMP_KEY = #{regTmpKey}
+				AND REG_STEP = #{regStep}
+		]]>
+	</select>
+	
+	<!-- 등록단계별 임시저장 JSON 조회 from prptSeqno -->
+	<select id="getTempdataOfRegistrationStepJsonFromPrptSeqno" parameterType="RegistrationTmpDataStepVO" resultType="RegistrationTmpDataStepVO">
+		<![CDATA[
+			SELECT
+				TMP_JSON_DATA,
+				REG_TMP_KEY
+			FROM
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND REG_CLAS_CD = #{regClasCd}
+				AND PRPT_SEQNO = #{prptSeqno}
+				AND REG_STEP = #{regStep}
+		]]>
+	</select>
+	
+	<!-- 등록단계별 임시정보 데이터 등록 -->
+	<insert id="registrationTempDataStep" parameterType="RegistrationTmpDataStepVO">
+		<![CDATA[
+			INSERT INTO TB_TEMPDATA_OF_REGISTRATION_STEP
+				(
+					MEM_SEQNO,
+					PRPT_SEQNO,
+					SUGGSTN_SALES_SEQNO,
+					PRPT_SUGGST_REQ_SEQNO,
+					MOV_PRPSL_PRPT_SEQNO,
+					ASSET_SEQNO,
+					REG_CLAS_CD,
+					REG_TMP_KEY,
+					REG_STEP,
+					TMP_JSON_DATA
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{prptSeqno},
+					#{suggstnSalesSeqno},
+					#{prptSuggstReqSeqno},
+					#{movPrpslPrptSeqno},
+					#{assetSeqno},
+					#{regClasCd},
+					#{regTmpKey},
+					#{regStep},
+					#{tmpJsonData}
+				)
+		]]>
+	</insert>
+	
+	<!-- 등록단계별 임시정보 데이터 업데이트 -->
+	<update id="updateTempDataStep" parameterType="RegistrationTmpDataStepVO">
+		<![CDATA[
+			UPDATE
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			SET
+				TMP_JSON_DATA = #{tmpJsonData},
+				REG_DTTM = NOW()
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND REG_CLAS_CD = #{regClasCd}
+				AND REG_TMP_KEY = #{regTmpKey}
+				AND REG_STEP = #{regStep}
+		]]>
+	</update>
+	
+	<!-- 등록단계별임시정보 매물시퀀스 등록 -->
+	<update id="updateTempDataPrptSeqno" parameterType="RegistrationTmpDataStepVO">
+		<![CDATA[
+			UPDATE
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			SET
+				PRPT_SEQNO = #{prptSeqno}
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+				AND REG_CLAS_CD = #{regClasCd}
+				AND REG_TMP_KEY = #{regTmpKey}
+		]]>
+	</update>
+	
+	<!-- 공통코드 존재여부 검증 ( 삭제된 코드도 포함하여 검증 ) -->
+	<select id="isInCommonCdWholeItems" parameterType="CommonCodeVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_COMN_CD
+			WHERE
+				COMN_CD = #{comnCd}
+				AND ITEM_CD = #{itemCd}
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(upItemCd)">
+		<![CDATA[
+				AND UP_ITEM_CD = #{upItemCd}
+		]]>
+			</if>
+	</select>
+	
+	<!-- 공통코드 존재여부 검증 ( 삭제된 코드는 제외하고 검증 ) -->
+	<select id="isInCommonCdUndeletedItems" parameterType="CommonCodeVO" resultType="Integer">
+		<![CDATA[
+			SELECT
+				COUNT(1)
+			FROM
+				TB_COMN_CD
+			WHERE
+				COMN_CD = #{comnCd}
+				AND ITEM_CD = #{itemCd}
+				AND DEL_YN = 'N'
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(upItemCd)">
+		<![CDATA[
+				AND UP_ITEM_CD = #{upItemCd}
+		]]>
+			</if>
+	</select>
+	
+	<!-- 기본 지역 및 지역코드 조회 -->
+	<select id="searchStandardRegionList" parameterType="StandardRegionVO" resultType="StandardRegionVO">
+		<![CDATA[
+			SELECT
+				SR.SIDO_CD,
+				SR.SGG_CD,
+				SR.UMD_CD,
+				SR.RI_CD,
+				SR.LOCAL_LOW_NM,
+				(
+					SELECT
+						COUNT(1)
+					FROM
+						TB_STANDARD_REGION
+					WHERE
+		]]>
+			<choose>
+				<when test='sidoCd == "00"'>
+		<![CDATA[
+						/* 시/도 하위 조회 */
+						SIDO_CD = SR.SIDO_CD
+						AND SGG_CD != '000'
+						AND UMD_CD = '000'
+						AND RI_CD = '00'
+		]]>
+				</when>
+				<when test='sggCd == "000"'>
+		<![CDATA[
+						/* 시/군/구 하위 조회 */
+						SIDO_CD = SR.SIDO_CD
+						AND SGG_CD = SR.SGG_CD
+						AND UMD_CD != '000'
+						AND RI_CD = '00'
+		]]>
+				</when>
+				<when test='umdCd == "000"'>
+		<![CDATA[
+						/* 읍/면/동 하위 조회 */
+						SIDO_CD = SR.SIDO_CD
+						AND SGG_CD = SR.SGG_CD
+						AND UMD_CD  = SR.UMD_CD
+						AND RI_CD != '00'
+		]]>
+				</when>
+				<otherwise>
+		<![CDATA[
+						/* 리 하위 조회 ( 하위 지역 없음 ) */
+						1 = 2
+		]]>
+				</otherwise>
+			</choose>
+		<![CDATA[
+				) AS SUB_CNT
+			FROM
+				TB_STANDARD_REGION SR
+			WHERE
+				SR.SIDO_CD != '00'
+		]]>
+			<choose>
+				<when test='sidoCd == "00"'>
+		<![CDATA[
+				/* 시/도 조회 */
+				AND SR.SIDO_CD != '00'
+				AND (
+						SGG_CD = '000'
+						OR
+						( SIDO_CD = '36' AND SGG_CD = '110' )			/* 세종특별자치시 추가 */
+				)
+				AND SR.UMD_CD = '000'
+				AND SR.RI_CD = '00'
+			ORDER BY
+				SR.SIDO_CD
+		]]>
+				</when>
+				<when test='sggCd == "000"'>
+		<![CDATA[
+				/* 시/군/구 조회 */
+				AND SR.SIDO_CD = #{sidoCd}
+				AND SR.SGG_CD != #{sggCd}
+				AND SR.UMD_CD = '000'
+				AND SR.RI_CD = '00'
+			ORDER BY
+				SR.SGG_CD
+		]]>
+				</when>
+				<when test='umdCd == "000"'>
+		<![CDATA[
+				/* 읍/면/동 조회 */
+				AND SR.SIDO_CD = #{sidoCd}
+				AND SR.SGG_CD = #{sggCd}
+				AND SR.UMD_CD != #{umdCd}
+				AND SR.RI_CD = '00'
+			ORDER BY
+				SR.UMD_CD
+		]]>
+				</when>
+				<otherwise>
+		<![CDATA[
+				/* 리 조회 */
+				AND SR.SIDO_CD = #{sidoCd}
+				AND SR.SGG_CD = #{sggCd}
+				AND SR.UMD_CD = #{umdCd}
+				AND SR.RI_CD != '00'
+			ORDER BY
+				SR.RI_CD
+		]]>
+				</otherwise>
+			</choose>
+	</select>
+	
+	<!-- 기본지역 주소 명칭 검색 -->
+	<select id="searchStandardRegionAddrNmList" parameterType="StandardRegionVO" resultType="StandardRegionVO">
+		<![CDATA[
+			SELECT
+				LOCAL_ADDR_NM AS ADDR_NM,
+		]]>
+			<choose>
+				<when test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(matchTag)">
+		<![CDATA[
+				REPLACE( LOCAL_ADDR_NM, #{srchVal}, CONCAT( '<', #{matchTag}, '>', #{srchVal}, '</', #{matchTag}, '>' ) ) AS WRAPPED_ADDR_NM
+		]]>
+				</when>
+				<otherwise>
+		<![CDATA[
+				LOCAL_ADDR_NM AS WRAPPED_ADDR_NM
+		]]>
+				</otherwise>
+			</choose>
+		<![CDATA[
+			FROM
+				TB_STANDARD_REGION
+			WHERE
+				LOCAL_ADDR_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+			ORDER BY
+				REGION_CD
+		]]>
+	</select>
+	
+	<!-- 매물 등록단계별 1단계 임시등록 키 조회 -->
+	<select id="getPropertyTempdataOfRegistrationKey" parameterType="RegistrationTmpDataStepVO" resultType="String">
+		<![CDATA[
+			SELECT
+				REG_TMP_KEY
+			FROM
+				TB_TEMPDATA_OF_REGISTRATION_STEP
+			WHERE
+				REG_CLAS_CD = #{regClasCd}
+				AND MEM_SEQNO = #{memSeqno}
+				AND PRPT_SEQNO = #{prptSeqno}
+				AND REG_STEP = 1
+		]]>
+	</select>
+	
+	<!-- 서비스이용약관 동의여부 조회 -->
+	<select id="checkForServiceTermsAgreeItem" parameterType="Long" resultType="MemberVO">
+		<![CDATA[
+			SELECT
+				AGE_14_OVR_AGRE_YN,
+				SVC_USE_AGRE_YN,
+				PRSNL_INF_AGRE_YN,
+				MKT_RCV_AGRE_YN
+			FROM
+				TB_TERMS_AGREE
+			WHERE
+				MEM_SEQNO = #{memSeqno}
+		]]>
+	</select>
+	
+	<!-- 서울/인천/경기지역 주소 명칭 검색 ( 시도->시군구 단위명칭 까지 ) -->
+	<select id="searchMetroRegionAddrNmItems" parameterType="String" resultType="StandardRegionVO">
+		<![CDATA[
+			SELECT
+				LOCAL_ADDR_NM AS ADDR_NM
+			FROM
+				TB_STANDARD_REGION
+			WHERE
+				SIDO_CD IN ( '11', '28', '41' )
+				AND SGG_CD != '000'
+				AND UMD_CD = '000'
+				AND RI_CD = '00'
+				AND LOCAL_ADDR_NM LIKE CONCAT( '%', #{srchVal}, '%' )
+			ORDER BY
+				REGION_CD
+		]]>
+	</select>
+	
+	<!-- 투어 요청 ( 일반/중개회원 공통 ) -->
+	<insert id="registerNotification" parameterType="NotificationVO">
+		<![CDATA[
+			INSERT INTO TB_NOTIFICATION
+				(
+					MEM_SEQNO,
+					NOTI_GB_CD,
+					NOTI_TYP_GB_CD,
+					NOTI_TTL,
+					NOTI_DSCR,
+					PRPT_SEQNO,
+					SUGGSTN_SALES_SEQNO
+				)
+			VALUES
+				(
+					#{memSeqno},
+					#{notiGbCd},
+					#{notiTypGbCd},
+					#{notiTtl},
+					#{notiDscr},
+					#{prptSeqno},
+					#{suggstnSalesSeqno}
+				)
+		]]>
+	</insert>
+	
+	<!-- 공통코드명 조회 -->
+	<select id="getCommonCodeNm" parameterType="CommonCodeVO" resultType="String">
+		<![CDATA[
+			SELECT
+				ITEM_CD_NM
+			FROM
+				TB_COMN_CD
+			WHERE
+				COMN_CD = #{comnCd}
+				AND ITEM_CD = #{itemCd}
+		]]>
+			<if test="!@com.gsntalk.api.util.GsntalkUtil@isEmpty(upItemCd)">
+		<![CDATA[
+				AND UP_ITEM_CD = #{upItemCd}
+		]]>
+			</if>
+	</select>
+</mapper>
